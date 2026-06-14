@@ -703,7 +703,7 @@ NexusLink/
 
 ## Local Development
 
-> **Status:** Not implemented yet. Use this checklist when Phase 1 starts.
+> **Status:** Phase 1 foundation implemented.
 
 ### Prerequisites
 
@@ -711,15 +711,29 @@ NexusLink/
 - Docker & Docker Compose
 - `make` (optional)
 
-### Planned quick start
+### Quick start
 
 ```bash
-git clone <repo>
+git clone https://github.com/JathinShyam/NexusLink.git
 cd NexusLink
 cp .env.example .env
-docker compose up -d    # Postgres, Redis, Kafka, ClickHouse
-make migrate
-make run                # or go run ./cmd/api
+make docker-up          # Postgres + migrate + API
+make health             # curl /health → {"status":"ok"}
+```
+
+Run the API locally (Postgres must be up):
+
+```bash
+make docker-up          # starts Postgres only if API already running locally, use: docker compose -f deploy/docker-compose.yml up -d postgres migrate
+make migrate-up
+make run
+```
+
+Or full stack in Docker:
+
+```bash
+make docker-up
+curl http://localhost:8080/health
 ```
 
 ### Environment variables (planned)

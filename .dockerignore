@@ -1,0 +1,7 @@
+bin/
+.git/
+.env
+deploy/data/
+roadmap/
+*.md
+!README.md

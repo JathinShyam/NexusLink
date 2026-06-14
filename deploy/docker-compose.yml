@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexuslink-postgres
+    environment:
+      POSTGRES_USER: nexuslink
+      POSTGRES_PASSWORD: nexuslink
+      POSTGRES_DB: nexuslink
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexuslink -d nexuslink"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate:v4.17.1
+    container_name: nexuslink-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../migrations:/migrations
+    command:
+      [
+        "-path=/migrations",
+        "-database=postgres://nexuslink:nexuslink@postgres:5432/nexuslink?sslmode=disable",
+        "up",
+      ]
+    restart: "no"
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: nexuslink-api
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      ENV: development
+      PORT: 8080
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://nexuslink:nexuslink@postgres:5432/nexuslink?sslmode=disable
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

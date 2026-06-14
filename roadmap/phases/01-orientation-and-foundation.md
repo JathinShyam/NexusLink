@@ -17,12 +17,12 @@ Set up your development environment and understand the system before building fe
 
 ## Build Tasks
 
-- [ ] Create folder structure matching planned architecture.
-- [ ] Initialize Go module and basic app entrypoint.
-- [ ] Add config loader and structured logging.
-- [ ] Create Docker Compose with app + PostgreSQL.
-- [ ] Create first migration for `url_mappings`.
-- [ ] Add `/health` endpoint.
+- [x] Create folder structure matching planned architecture.
+- [x] Initialize Go module and basic app entrypoint.
+- [x] Add config loader and structured logging.
+- [x] Create Docker Compose with app + PostgreSQL.
+- [x] Create first migration for `url_mappings`.
+- [x] Add `/health` endpoint.
 
 ## Deliverables
 

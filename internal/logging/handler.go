@@ -12,35 +12,42 @@ import (
 
 const httpRequestMsg = "http.request"
 
-type ColoredHandler struct {
-	w     io.Writer
-	level slog.Level
-	mu    sync.Mutex
+// TextHandler writes human-readable log lines. Use colored=true for terminals,
+// colored=false for log files (same layout, no ANSI escape codes).
+type TextHandler struct {
+	w       io.Writer
+	level   slog.Level
+	mu      sync.Mutex
+	colored bool
 }
 
-func NewColoredHandler(w io.Writer, level slog.Level) *ColoredHandler {
-	return &ColoredHandler{w: w, level: level}
+func NewColoredHandler(w io.Writer, level slog.Level) *TextHandler {
+	return &TextHandler{w: w, level: level, colored: true}
 }
 
-func (h *ColoredHandler) Enabled(_ context.Context, level slog.Level) bool {
+func NewPlainHandler(w io.Writer, level slog.Level) *TextHandler {
+	return &TextHandler{w: w, level: level, colored: false}
+}
+
+func (h *TextHandler) Enabled(_ context.Context, level slog.Level) bool {
 	return level >= h.level
 }
 
-func (h *ColoredHandler) Handle(_ context.Context, r slog.Record) error {
+func (h *TextHandler) Handle(_ context.Context, r slog.Record) error {
 	var buf strings.Builder
 
 	ts := r.Time.Format("15:04:05")
 	level := r.Level.String()
 
-	buf.WriteString(paint(dim, ts))
+	buf.WriteString(h.styled(dim, ts))
 	buf.WriteByte(' ')
-	buf.WriteString(paint(levelColor(level), fmt.Sprintf("%-5s", level)))
+	buf.WriteString(h.styled(levelColor(level), fmt.Sprintf("%-5s", level)))
 
 	if r.Message == httpRequestMsg {
 		h.formatHTTPRequest(&buf, r)
 	} else {
 		buf.WriteByte(' ')
-		buf.WriteString(paint(bold+white, r.Message))
+		buf.WriteString(h.styled(bold+white, r.Message))
 		h.appendAttrs(&buf, r)
 	}
 
@@ -52,7 +59,14 @@ func (h *ColoredHandler) Handle(_ context.Context, r slog.Record) error {
 	return err
 }
 
-func (h *ColoredHandler) formatHTTPRequest(buf *strings.Builder, r slog.Record) {
+func (h *TextHandler) styled(color, text string) string {
+	if !h.colored {
+		return text
+	}
+	return paint(color, text)
+}
+
+func (h *TextHandler) formatHTTPRequest(buf *strings.Builder, r slog.Record) {
 	var method, path string
 	var status int
 	var duration time.Duration
@@ -77,39 +91,39 @@ func (h *ColoredHandler) formatHTTPRequest(buf *strings.Builder, r slog.Record) 
 	})
 
 	buf.WriteByte(' ')
-	buf.WriteString(paint(bold+cyan, method))
+	buf.WriteString(h.styled(bold+cyan, method))
 	buf.WriteByte(' ')
-	buf.WriteString(paint(white, path))
-	buf.WriteString(paint(dim, " → "))
-	buf.WriteString(paint(statusColor(status), fmt.Sprintf("%d", status)))
-	buf.WriteString(paint(dim, " in "))
-	buf.WriteString(paint(durationColor(duration), formatDuration(duration)))
+	buf.WriteString(h.styled(white, path))
+	buf.WriteString(h.styled(dim, " → "))
+	buf.WriteString(h.styled(statusColor(status), fmt.Sprintf("%d", status)))
+	buf.WriteString(h.styled(dim, " in "))
+	buf.WriteString(h.styled(durationColor(duration), formatDuration(duration)))
 }
 
-func (h *ColoredHandler) appendAttrs(buf *strings.Builder, r slog.Record) {
+func (h *TextHandler) appendAttrs(buf *strings.Builder, r slog.Record) {
 	r.Attrs(func(a slog.Attr) bool {
 		buf.WriteByte(' ')
-		buf.WriteString(paint(dim, a.Key+"="))
-		buf.WriteString(formatAttrValue(a.Value))
+		buf.WriteString(h.styled(dim, a.Key+"="))
+		buf.WriteString(h.formatAttrValue(a.Value))
 		return true
 	})
 }
 
-func formatAttrValue(v slog.Value) string {
+func (h *TextHandler) formatAttrValue(v slog.Value) string {
 	switch v.Kind() {
 	case slog.KindString:
-		return paint(white, v.String())
+		return h.styled(white, v.String())
 	case slog.KindInt64:
-		return paint(magenta, fmt.Sprintf("%d", v.Int64()))
+		return h.styled(magenta, fmt.Sprintf("%d", v.Int64()))
 	case slog.KindDuration:
-		return paint(green, v.Duration().String())
+		return h.styled(green, v.Duration().String())
 	case slog.KindAny:
 		if err, ok := v.Any().(error); ok {
-			return paint(red, err.Error())
+			return h.styled(red, err.Error())
 		}
-		return paint(white, fmt.Sprintf("%v", v.Any()))
+		return h.styled(white, fmt.Sprintf("%v", v.Any()))
 	default:
-		return paint(white, v.String())
+		return h.styled(white, v.String())
 	}
 }
 
@@ -124,11 +138,11 @@ func formatDuration(d time.Duration) string {
 	}
 }
 
-func (h *ColoredHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (h *TextHandler) WithAttrs(_ []slog.Attr) slog.Handler {
 	return h
 }
 
-func (h *ColoredHandler) WithGroup(_ string) slog.Handler {
+func (h *TextHandler) WithGroup(_ string) slog.Handler {
 	return h
 }
 

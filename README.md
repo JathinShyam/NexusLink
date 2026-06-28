@@ -736,6 +736,20 @@ make docker-up
 curl http://localhost:8080/health
 ```
 
+### Shorten and redirect (Phase 2)
+
+```bash
+make demo
+
+# Or manually:
+curl -X POST http://localhost:8080/api/v1/shorten \
+  -H 'Content-Type: application/json' \
+  -d '{"long_url":"https://example.com/hello"}'
+
+# Visit the short_url from the response, or:
+curl -I http://localhost:8080/<short_code>
+```
+
 ### Environment variables (planned)
 
 | Variable | Description |

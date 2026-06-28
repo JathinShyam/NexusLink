@@ -86,6 +86,39 @@ func TestColorsDisabledWithNoColor(t *testing.T) {
 	}
 }
 
+func TestPlainHandlerNoANSI(t *testing.T) {
+	var buf bytes.Buffer
+	handler := NewPlainHandler(&buf, parseLevel("info"))
+
+	record := slog.NewRecord(
+		time.Date(2026, 6, 13, 19, 12, 3, 0, time.UTC),
+		slog.LevelInfo,
+		httpRequestMsg,
+		0,
+	)
+	record.AddAttrs(
+		slog.String("method", "GET"),
+		slog.String("path", "/health"),
+		slog.Int("status", 200),
+		slog.Duration("duration", 1500*time.Microsecond),
+	)
+
+	if err := handler.Handle(context.Background(), record); err != nil {
+		t.Fatalf("Handle() error = %v", err)
+	}
+
+	out := buf.String()
+	if strings.Contains(out, "\033") {
+		t.Errorf("plain handler must not write ANSI codes: %q", out)
+	}
+	want := "19:12:03 INFO  GET /health → 200 in 1.50ms"
+	if stripANSI(out) != want+"\n" && out != want+"\n" {
+		if !strings.Contains(out, "GET /health") || !strings.Contains(out, "200") {
+			t.Errorf("unexpected plain output: %q", out)
+		}
+	}
+}
+
 func stripANSI(s string) string {
 	var out strings.Builder
 	for i := 0; i < len(s); i++ {

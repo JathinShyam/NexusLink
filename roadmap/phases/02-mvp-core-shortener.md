@@ -17,13 +17,13 @@ Build the smallest end-to-end working product: shorten URL and redirect.
 
 ## Build Tasks
 
-- [ ] Implement base62 encoder utility.
-- [ ] Implement ID generation (simple first, Snowflake-ready abstraction).
-- [ ] Build `POST /api/v1/shorten`.
-- [ ] Build `GET /{short_code}` with 302 redirect.
-- [ ] Add URL validation (allow only http/https).
-- [ ] Add error handling (`400`, `404`, `409` where relevant).
-- [ ] Write unit tests for base62 + handlers.
+- [x] Implement base62 encoder utility.
+- [x] Implement ID generation (simple first, Snowflake-ready abstraction).
+- [x] Build `POST /api/v1/shorten`.
+- [x] Build `GET /{short_code}` with 302 redirect.
+- [x] Add URL validation (allow only http/https).
+- [x] Add error handling (`400`, `404`, `409` where relevant).
+- [x] Write unit tests for base62 + handlers.
 
 ## Deliverables
 

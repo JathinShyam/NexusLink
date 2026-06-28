@@ -10,7 +10,7 @@ import (
 
 func TestHealthEndpoint(t *testing.T) {
 	log := slog.New(slog.DiscardHandler)
-	srv := New(log, ":8080")
+	srv := New(log, ":8080", Options{})
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()

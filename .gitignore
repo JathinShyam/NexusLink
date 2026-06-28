@@ -26,3 +26,9 @@ Thumbs.db
 
 # Docker
 deploy/data/
+
+# Logs (per-service append files under logs/)
+logs/**/*
+!logs/**/.gitkeep
+
+.history/

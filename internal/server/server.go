@@ -8,7 +8,14 @@ import (
 	"time"
 
 	"github.com/JathinShyam/NexusLink/internal/logging"
+	"github.com/JathinShyam/NexusLink/internal/redirect"
+	"github.com/JathinShyam/NexusLink/internal/shorten"
 )
+
+type Options struct {
+	Shorten  *shorten.Handler
+	Redirect *redirect.Handler
+}
 
 type Server struct {
 	log  *slog.Logger
@@ -16,7 +23,7 @@ type Server struct {
 	http *http.Server
 }
 
-func New(log *slog.Logger, addr string) *Server {
+func New(log *slog.Logger, addr string, opts Options) *Server {
 	mux := http.NewServeMux()
 	s := &Server{
 		log: log,
@@ -29,6 +36,15 @@ func New(log *slog.Logger, addr string) *Server {
 	}
 
 	mux.HandleFunc("GET /health", s.handleHealth)
+
+	if opts.Shorten != nil {
+		mux.HandleFunc("POST /api/v1/shorten", opts.Shorten.Create)
+	}
+	if opts.Redirect != nil {
+		mux.HandleFunc("GET /{short_code}", func(w http.ResponseWriter, r *http.Request) {
+			opts.Redirect.Serve(w, r)
+		})
+	}
 
 	return s
 }

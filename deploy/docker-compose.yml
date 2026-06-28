@@ -10,6 +10,25 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ../logs/postgres:/var/log/postgresql
+    command:
+      - postgres
+      - -c
+      - logging_collector=on
+      - -c
+      - log_directory=/var/log/postgresql
+      - -c
+      - log_filename=postgres.log
+      - -c
+      - log_rotation_age=0
+      - -c
+      - log_rotation_size=0
+      - -c
+      - log_statement=mod
+      - -c
+      - log_connections=on
+      - -c
+      - log_disconnections=on
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nexuslink -d nexuslink"]
       interval: 5s
@@ -22,14 +41,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        mkdir -p /logs &&
+        migrate -path=/migrations
+        -database=postgres://nexuslink:nexuslink@postgres:5432/nexuslink?sslmode=disable
+        up >> /logs/migrate.log 2>&1
     volumes:
       - ../migrations:/migrations
-    command:
-      [
-        "-path=/migrations",
-        "-database=postgres://nexuslink:nexuslink@postgres:5432/nexuslink?sslmode=disable",
-        "up",
-      ]
+      - ../logs/migrate:/logs
     restart: "no"
 
   api:
@@ -44,9 +65,14 @@ services:
       ENV: development
       PORT: 8080
       LOG_LEVEL: info
+      LOG_DIR: /app/logs
+      LOG_FILE: app.log
       DATABASE_URL: postgres://nexuslink:nexuslink@postgres:5432/nexuslink?sslmode=disable
+      BASE_URL: http://localhost:8080
     ports:
       - "8080:8080"
+    volumes:
+      - ../logs/api:/app/logs
 
 volumes:
   postgres_data:

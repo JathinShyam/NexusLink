@@ -1,0 +1,289 @@
+{
+  "info": {
+    "_postman_id": "nexuslink-local-collection",
+    "name": "NexusLink Local",
+    "description": "Local API collection for NexusLink.\n\n**Setup**\n1. `make docker-up`\n2. Import this collection + environment\n3. **Select `NexusLink Local` environment** (top-right dropdown)\n4. Run **Shorten URL** first — saves `short_code` automatically\n5. Then run **Redirect (no follow - see 302)**\n\n**If redirect returns 404:**\n- `short_code` is probably empty — run Shorten again\n- Check the URL bar shows `http://localhost:8080/5` (not `http://localhost:8080/`)\n- Or paste `short_code` from the shorten response manually into the environment",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_host", "value": "localhost" },
+    { "key": "base_port", "value": "8080" },
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "short_code", "value": "" },
+    { "key": "short_url", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const envCode = pm.environment.get('short_code');",
+          "const colCode = pm.collectionVariables.get('short_code');",
+          "if (envCode) pm.collectionVariables.set('short_code', envCode);",
+          "else if (colCode) pm.environment.set('short_code', colCode);"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/health",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["health"]
+            },
+            "description": "Expect `200` and `{\"status\":\"ok\"}`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Shorten",
+      "item": [
+        {
+          "name": "Shorten URL",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"long_url\": \"https://example.com/docs/nexuslink\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/shorten",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "shorten"]
+            },
+            "description": "Run this BEFORE any redirect request. Saves `short_code` to your environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('has short_code', () => pm.expect(json.short_code).to.be.a('string').and.not.empty);",
+                  "pm.environment.set('short_code', json.short_code);",
+                  "pm.collectionVariables.set('short_code', json.short_code);",
+                  "pm.environment.set('short_url', json.short_url);",
+                  "pm.collectionVariables.set('short_url', json.short_url);",
+                  "console.log('Saved short_code =', json.short_code);",
+                  "console.log('Saved short_url  =', json.short_url);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Shorten URL with Custom Alias",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"long_url\": \"https://example.com/custom-alias-demo\",\n  \"custom_alias\": \"my-demo-link\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/shorten",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "shorten"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.environment.set('short_code', json.short_code);",
+                  "  pm.collectionVariables.set('short_code', json.short_code);",
+                  "  pm.environment.set('short_url', json.short_url);",
+                  "  pm.collectionVariables.set('short_url', json.short_url);",
+                  "  console.log('Saved short_code =', json.short_code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Shorten URL with Expiry",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"long_url\": \"https://example.com/expiring-link\",\n  \"expires_in_seconds\": 3600\n}"
+            },
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/shorten",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "shorten"]
+            }
+          }
+        },
+        {
+          "name": "Shorten URL - Invalid URL (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"long_url\": \"ftp://example.com/bad\"\n}" },
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/shorten",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "shorten"]
+            }
+          }
+        },
+        {
+          "name": "Shorten URL - Alias Taken (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"long_url\": \"https://example.com/duplicate\",\n  \"custom_alias\": \"my-demo-link\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/shorten",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "shorten"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Redirect",
+      "item": [
+        {
+          "name": "Redirect (no follow - see 302)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/{{short_code}}",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["{{short_code}}"]
+            },
+            "description": "Turn OFF **Automatically follow redirects** in Postman Settings.\n\nExpect `302` + `Location` header.\n\n**Must run Shorten URL first** so `short_code` is set."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const code = pm.environment.get('short_code') || pm.collectionVariables.get('short_code');",
+                  "if (!code) {",
+                  "  throw new Error('short_code is empty! Run \"Shorten URL\" first, or set short_code in the environment (e.g. 5).');",
+                  "}",
+                  "console.log('GET http://localhost:8080/' + code);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Location header exists', () => pm.response.to.have.header('Location'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Redirect (follow)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{short_url}}",
+            "description": "Uses `short_url` from the shorten response directly.\n\nTurn ON **Automatically follow redirects**.\n\nRun **Shorten URL** first."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const url = pm.environment.get('short_url') || pm.collectionVariables.get('short_url');",
+                  "if (!url) {",
+                  "  throw new Error('short_url is empty! Run \"Shorten URL\" first.');",
+                  "}",
+                  "pm.request.url = url;",
+                  "console.log('GET', url);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Redirect - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/does-not-exist-xyz",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["does-not-exist-xyz"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('NOT_FOUND', () => pm.expect(pm.response.json().code).to.eql('NOT_FOUND'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

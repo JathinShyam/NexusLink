@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JathinShyam/NexusLink/internal/cache"
 	"github.com/JathinShyam/NexusLink/internal/encoding/base62"
 	"github.com/JathinShyam/NexusLink/internal/idgen"
 	"github.com/JathinShyam/NexusLink/internal/storage"
@@ -23,6 +24,7 @@ type Request struct {
 	LongURL          string
 	CustomAlias      string
 	ExpiresInSeconds *int64
+	UserID           *string
 }
 
 type Response struct {
@@ -36,13 +38,15 @@ type Service struct {
 	repo    storage.Repository
 	idgen   idgen.Generator
 	baseURL string
+	cache   cache.URLCache
 }
 
-func NewService(repo storage.Repository, generator idgen.Generator, baseURL string) *Service {
+func NewService(repo storage.Repository, generator idgen.Generator, baseURL string, urlCache cache.URLCache) *Service {
 	return &Service{
 		repo:    repo,
 		idgen:   generator,
 		baseURL: strings.TrimRight(baseURL, "/"),
+		cache:   urlCache,
 	}
 }
 
@@ -90,6 +94,7 @@ func (s *Service) Create(ctx context.Context, req Request) (*Response, error) {
 		ShortCode:   shortCode,
 		LongURL:     longURL,
 		SnowflakeID: snowflakeID,
+		UserID:      req.UserID,
 		ExpiresAt:   expiresAt,
 		IsActive:    true,
 		HTTPStatus:  httpStatusFound,
@@ -100,6 +105,14 @@ func (s *Service) Create(ctx context.Context, req Request) (*Response, error) {
 			return nil, ErrAliasTaken
 		}
 		return nil, err
+	}
+
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, shortCode, cache.Entry{
+			LongURL:    longURL,
+			HTTPStatus: httpStatusFound,
+			ExpiresAt:  expiresAt,
+		})
 	}
 
 	return &Response{

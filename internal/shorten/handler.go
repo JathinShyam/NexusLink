@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/JathinShyam/NexusLink/internal/auth"
 	"github.com/JathinShyam/NexusLink/internal/httpx"
 )
 
@@ -41,6 +42,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		LongURL:          body.LongURL,
 		CustomAlias:      body.CustomAlias,
 		ExpiresInSeconds: body.ExpiresInSeconds,
+		UserID:           userIDFromRequest(r),
 	})
 	if err != nil {
 		writeServiceError(w, err)
@@ -53,6 +55,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		LongURL:   result.LongURL,
 		ExpiresAt: result.ExpiresAt,
 	})
+}
+
+func userIDFromRequest(r *http.Request) *string {
+	if userID, ok := auth.UserIDFromContext(r.Context()); ok {
+		return &userID
+	}
+	return nil
 }
 
 func writeServiceError(w http.ResponseWriter, err error) {

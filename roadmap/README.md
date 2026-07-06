@@ -27,6 +27,15 @@ It is designed for a beginner who wants to complete the full project end to end 
 6. `phases/06-deployment-and-showcase.md`
 7. `phases/07-polish-and-advanced-extras.md`
 
+## Implementation log (code changes)
+
+Detailed, file-by-file documentation of what was built in each phase:
+
+- **[implementation/README.md](./implementation/README.md)** — index and verification commands
+- **[implementation/phase-01-foundation.md](./implementation/phase-01-foundation.md)**
+- **[implementation/phase-02-mvp-shortener.md](./implementation/phase-02-mvp-shortener.md)**
+- **[implementation/phase-03-scale-core.md](./implementation/phase-03-scale-core.md)**
+
 ## Burnout Prevention Rules
 
 - Keep "must do" list to 3 tasks/day max.

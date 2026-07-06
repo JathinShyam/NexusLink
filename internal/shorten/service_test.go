@@ -42,6 +42,18 @@ func (m *mockRepo) Exists(_ context.Context, shortCode string) (bool, error) {
 	return m.exists, nil
 }
 
+func (m *mockRepo) Deactivate(_ context.Context, shortCode string) error {
+	if m.mappings == nil {
+		return storage.ErrNotFound
+	}
+	mapping, ok := m.mappings[shortCode]
+	if !ok || !mapping.IsActive {
+		return storage.ErrNotFound
+	}
+	mapping.IsActive = false
+	return nil
+}
+
 type mockIDGen struct {
 	next uint64
 }
@@ -53,7 +65,7 @@ func (m *mockIDGen) Next(context.Context) (uint64, error) {
 
 func TestServiceCreateGeneratedCode(t *testing.T) {
 	repo := &mockRepo{}
-	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080")
+	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080", nil)
 
 	result, err := svc.Create(context.Background(), Request{
 		LongURL: "https://example.com/long/path",
@@ -75,7 +87,7 @@ func TestServiceCreateGeneratedCode(t *testing.T) {
 
 func TestServiceCreateCustomAlias(t *testing.T) {
 	repo := &mockRepo{}
-	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080")
+	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080", nil)
 
 	result, err := svc.Create(context.Background(), Request{
 		LongURL:     "https://example.com",
@@ -93,7 +105,7 @@ func TestServiceCreateAliasTaken(t *testing.T) {
 	repo := &mockRepo{mappings: map[string]*storage.URLMapping{
 		"taken": {ShortCode: "taken", LongURL: "https://example.com"},
 	}}
-	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080")
+	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080", nil)
 
 	_, err := svc.Create(context.Background(), Request{
 		LongURL:     "https://example.com",
@@ -105,7 +117,7 @@ func TestServiceCreateAliasTaken(t *testing.T) {
 }
 
 func TestServiceCreateInvalidURL(t *testing.T) {
-	svc := NewService(&mockRepo{}, &mockIDGen{}, "http://localhost:8080")
+	svc := NewService(&mockRepo{}, &mockIDGen{}, "http://localhost:8080", nil)
 	_, err := svc.Create(context.Background(), Request{LongURL: "ftp://bad"})
 	if !errors.Is(err, ErrInvalidURL) {
 		t.Fatalf("Create() error = %v, want ErrInvalidURL", err)
@@ -114,7 +126,7 @@ func TestServiceCreateInvalidURL(t *testing.T) {
 
 func TestServiceCreateWithExpiry(t *testing.T) {
 	repo := &mockRepo{}
-	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080")
+	svc := NewService(repo, &mockIDGen{}, "http://localhost:8080", nil)
 	ttl := int64(3600)
 
 	result, err := svc.Create(context.Background(), Request{

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JathinShyam/NexusLink/internal/cache"
 	"github.com/JathinShyam/NexusLink/internal/storage"
 )
 
@@ -17,6 +18,8 @@ type mockRepo struct {
 
 func (m *mockRepo) Create(context.Context, *storage.URLMapping) error { return nil }
 func (m *mockRepo) Exists(context.Context, string) (bool, error)      { return false, nil }
+
+func (m *mockRepo) Deactivate(context.Context, string) error { return nil }
 
 func (m *mockRepo) GetByShortCode(context.Context, string) (*storage.URLMapping, error) {
 	if m.err != nil {
@@ -30,14 +33,15 @@ func (m *mockRepo) GetByShortCode(context.Context, string) (*storage.URLMapping,
 }
 
 func TestHandlerRedirectSuccess(t *testing.T) {
-	handler := NewHandler(&mockRepo{
+	resolver := NewResolver(&mockRepo{
 		mapping: &storage.URLMapping{
 			ShortCode:  "abc",
 			LongURL:    "https://example.com",
 			IsActive:   true,
 			HTTPStatus: http.StatusFound,
 		},
-	})
+	}, cache.NoopCache{}, nil)
+	handler := NewHandler(resolver)
 
 	req := httptest.NewRequest(http.MethodGet, "/abc", nil)
 	rec := httptest.NewRecorder()
@@ -52,7 +56,7 @@ func TestHandlerRedirectSuccess(t *testing.T) {
 }
 
 func TestHandlerRedirectNotFound(t *testing.T) {
-	handler := NewHandler(&mockRepo{})
+	handler := NewHandler(NewResolver(&mockRepo{}, cache.NoopCache{}, nil))
 	req := httptest.NewRequest(http.MethodGet, "/missing", nil)
 	rec := httptest.NewRecorder()
 	handler.Serve(rec, req)
@@ -64,14 +68,15 @@ func TestHandlerRedirectNotFound(t *testing.T) {
 
 func TestHandlerRedirectExpired(t *testing.T) {
 	expired := time.Now().UTC().Add(-time.Hour)
-	handler := NewHandler(&mockRepo{
+	resolver := NewResolver(&mockRepo{
 		mapping: &storage.URLMapping{
 			ShortCode: "expired",
 			LongURL:   "https://example.com",
 			IsActive:  true,
 			ExpiresAt: &expired,
 		},
-	})
+	}, cache.NoopCache{}, nil)
+	handler := NewHandler(resolver)
 
 	req := httptest.NewRequest(http.MethodGet, "/expired", nil)
 	rec := httptest.NewRecorder()

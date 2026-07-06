@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "nexuslink-local-collection",
     "name": "NexusLink Local",
-    "description": "Local API collection for NexusLink.\n\n**Setup**\n1. `make docker-up`\n2. Import this collection + environment\n3. **Select `NexusLink Local` environment** (top-right dropdown)\n4. Run **Shorten URL** first — saves `short_code` automatically\n5. Then run **Redirect (no follow - see 302)**\n\n**If redirect returns 404:**\n- `short_code` is probably empty — run Shorten again\n- Check the URL bar shows `http://localhost:8080/5` (not `http://localhost:8080/`)\n- Or paste `short_code` from the shorten response manually into the environment",
+    "description": "Local API collection for NexusLink.\n\n**Setup**\n1. `make docker-up`\n2. Import this collection + environment\n3. **Select `NexusLink Local` environment** (top-right dropdown)\n4. Run **Shorten URL** first — saves `short_code` automatically\n5. Then run **Redirect (no follow - see 302)**\n\n**Phase 3 (auth/delete):**\n- Run `make gentoken` locally, paste token into `jwt_token` env var\n- Use **Shorten URL (authenticated)** then **Delete Link**\n\n**If redirect returns 404:**\n- `short_code` is probably empty — run Shorten again\n- Check the URL bar shows `http://localhost:8080/5` (not `http://localhost:8080/`)\n- Or paste `short_code` from the shorten response manually into the environment",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -10,7 +10,9 @@
     { "key": "base_port", "value": "8080" },
     { "key": "base_url", "value": "http://localhost:8080" },
     { "key": "short_code", "value": "" },
-    { "key": "short_url", "value": "" }
+    { "key": "short_url", "value": "" },
+    { "key": "jwt_token", "value": "" },
+    { "key": "user_id", "value": "dev-user" }
   ],
   "event": [
     {
@@ -277,6 +279,150 @@
                 "exec": [
                   "pm.test('status is 404', () => pm.response.to.have.status(404));",
                   "pm.test('NOT_FOUND', () => pm.expect(pm.response.json().code).to.eql('NOT_FOUND'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Observability",
+      "item": [
+        {
+          "name": "Ready Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/ready",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["ready"]
+            },
+            "description": "Expect `200` when Postgres + Redis are healthy."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status ready', () => pm.expect(pm.response.json().status).to.eql('ready'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/metrics",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["metrics"]
+            },
+            "description": "Prometheus text format. Look for `cache_hits_total`, `cache_misses_total`, `rate_limit_exceeded_total`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Link Management",
+      "item": [
+        {
+          "name": "Shorten URL (authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"long_url\": \"https://example.com/owned-link\",\n  \"custom_alias\": \"my-owned-link\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/shorten",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "shorten"]
+            },
+            "description": "Set `jwt_token` first (run `make gentoken` locally). Creates a link owned by `user_id`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.environment.set('short_code', json.short_code);",
+                  "  pm.collectionVariables.set('short_code', json.short_code);",
+                  "  pm.environment.set('short_url', json.short_url);",
+                  "  pm.collectionVariables.set('short_url', json.short_url);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Link",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/links/{{short_code}}",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "links", "{{short_code}}"]
+            },
+            "description": "Requires JWT. Only deletes links created with the same `user_id`. Expect `204`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 204', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Link - Unauthorized (401)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_host}}:{{base_port}}/api/v1/links/{{short_code}}",
+              "protocol": "http",
+              "host": ["{{base_host}}"],
+              "port": "{{base_port}}",
+              "path": ["api", "v1", "links", "{{short_code}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));"
                 ],
                 "type": "text/javascript"
               }

@@ -78,6 +78,22 @@ func (r *PostgresRepository) Exists(ctx context.Context, shortCode string) (bool
 	return exists, nil
 }
 
+func (r *PostgresRepository) Deactivate(ctx context.Context, shortCode string) error {
+	const query = `
+		UPDATE url_mappings
+		SET is_active = false
+		WHERE short_code = $1 AND is_active = true`
+
+	tag, err := r.pool.Exec(ctx, query, shortCode)
+	if err != nil {
+		return fmt.Errorf("deactivate url mapping: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"

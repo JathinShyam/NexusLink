@@ -4,18 +4,17 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/JathinShyam/NexusLink/internal/httpx"
 	"github.com/JathinShyam/NexusLink/internal/storage"
 )
 
 type Handler struct {
-	repo storage.Repository
+	resolver *Resolver
 }
 
-func NewHandler(repo storage.Repository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(resolver *Resolver) *Handler {
+	return &Handler{resolver: resolver}
 }
 
 func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +27,7 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := h.repo.GetByShortCode(r.Context(), shortCode)
+	target, err := h.resolver.Resolve(r.Context(), shortCode)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			httpx.WriteError(w, http.StatusNotFound, "NOT_FOUND", "short link not found")
@@ -38,20 +37,5 @@ func (h *Handler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !mapping.IsActive {
-		httpx.WriteError(w, http.StatusNotFound, "NOT_FOUND", "short link not found")
-		return
-	}
-
-	if mapping.ExpiresAt != nil && mapping.ExpiresAt.Before(time.Now().UTC()) {
-		httpx.WriteError(w, http.StatusNotFound, "NOT_FOUND", "short link has expired")
-		return
-	}
-
-	status := mapping.HTTPStatus
-	if status == 0 {
-		status = http.StatusFound
-	}
-
-	http.Redirect(w, r, mapping.LongURL, status)
+	http.Redirect(w, r, target.longURL, target.httpStatus)
 }

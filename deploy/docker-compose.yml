@@ -35,6 +35,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: nexuslink-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   migrate:
     image: migrate/migrate:v4.17.1
     container_name: nexuslink-migrate
@@ -61,6 +72,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     environment:
       ENV: development
       PORT: 8080
@@ -68,7 +81,10 @@ services:
       LOG_DIR: /app/logs
       LOG_FILE: app.log
       DATABASE_URL: postgres://nexuslink:nexuslink@postgres:5432/nexuslink?sslmode=disable
+      REDIS_URL: redis://redis:6379
       BASE_URL: http://localhost:8080
+      JWT_SECRET: dev-secret-change-me
+      SNOWFLAKE_MACHINE_ID: 1
     ports:
       - "8080:8080"
     volumes:

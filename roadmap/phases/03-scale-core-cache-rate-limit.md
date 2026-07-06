@@ -17,12 +17,12 @@ Make the MVP more production-like: faster reads, safer traffic handling, basic u
 
 ## Build Tasks
 
-- [ ] Integrate Redis for redirect cache.
-- [ ] Add cache read-through on redirect.
-- [ ] Add cache update/invalidation on shorten or delete.
-- [ ] Implement rate limiting (start with fixed window, then token bucket).
-- [ ] Add JWT auth for link management endpoints.
-- [ ] Add Prometheus metrics for latency, hit/miss, rate-limited requests.
+- [x] Integrate Redis for redirect cache.
+- [x] Add cache read-through on redirect.
+- [x] Add cache update/invalidation on shorten or delete.
+- [x] Implement rate limiting (start with fixed window, then token bucket).
+- [x] Add JWT auth for link management endpoints.
+- [x] Add Prometheus metrics for latency, hit/miss, rate-limited requests.
 
 ## Deliverables
 

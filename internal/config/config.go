@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -15,7 +16,15 @@ type Config struct {
 	LogDir      string
 	LogFile     string
 	DatabaseURL string
+	RedisURL    string
 	BaseURL     string
+	JWTSecret   string
+	JWTTTL      time.Duration
+	MachineID   int64
+	ShortenRateLimit int64
+	ShortenRateWindow time.Duration
+	RedirectBucketCapacity int64
+	RedirectRefillPerSec   float64
 }
 
 func Load() (*Config, error) {
@@ -26,14 +35,52 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid PORT: %w", err)
 	}
 
+	machineID, err := strconv.ParseInt(getEnv("SNOWFLAKE_MACHINE_ID", "1"), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SNOWFLAKE_MACHINE_ID: %w", err)
+	}
+
+	shortenLimit, err := strconv.ParseInt(getEnv("RATE_LIMIT_SHORTEN", "30"), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid RATE_LIMIT_SHORTEN: %w", err)
+	}
+
+	shortenWindowSec, err := strconv.Atoi(getEnv("RATE_LIMIT_SHORTEN_WINDOW_SEC", "60"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid RATE_LIMIT_SHORTEN_WINDOW_SEC: %w", err)
+	}
+
+	bucketCapacity, err := strconv.ParseInt(getEnv("RATE_LIMIT_REDIRECT_CAPACITY", "100"), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid RATE_LIMIT_REDIRECT_CAPACITY: %w", err)
+	}
+
+	refillRate, err := strconv.ParseFloat(getEnv("RATE_LIMIT_REDIRECT_REFILL_PER_SEC", "50"), 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid RATE_LIMIT_REDIRECT_REFILL_PER_SEC: %w", err)
+	}
+
+	jwtTTLHours, err := strconv.Atoi(getEnv("JWT_TTL_HOURS", "24"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWT_TTL_HOURS: %w", err)
+	}
+
 	cfg := &Config{
-		Env:         getEnv("ENV", "development"),
-		Port:        port,
-		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		LogDir:      getEnv("LOG_DIR", "logs/api"),
-		LogFile:     getEnv("LOG_FILE", "app.log"),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://nexuslink:nexuslink@localhost:5432/nexuslink?sslmode=disable"),
-		BaseURL:     getEnv("BASE_URL", "http://localhost:8080"),
+		Env:                    getEnv("ENV", "development"),
+		Port:                   port,
+		LogLevel:               getEnv("LOG_LEVEL", "info"),
+		LogDir:                 getEnv("LOG_DIR", "logs/api"),
+		LogFile:                getEnv("LOG_FILE", "app.log"),
+		DatabaseURL:            getEnv("DATABASE_URL", "postgres://nexuslink:nexuslink@localhost:5432/nexuslink?sslmode=disable"),
+		RedisURL:               getEnv("REDIS_URL", "redis://localhost:6379"),
+		BaseURL:                getEnv("BASE_URL", "http://localhost:8080"),
+		JWTSecret:              getEnv("JWT_SECRET", "dev-secret-change-me"),
+		JWTTTL:                 time.Duration(jwtTTLHours) * time.Hour,
+		MachineID:              machineID,
+		ShortenRateLimit:       shortenLimit,
+		ShortenRateWindow:      time.Duration(shortenWindowSec) * time.Second,
+		RedirectBucketCapacity: bucketCapacity,
+		RedirectRefillPerSec:   refillRate,
 	}
 
 	return cfg, nil

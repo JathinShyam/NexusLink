@@ -26,4 +26,5 @@ type Repository interface {
 	Create(ctx context.Context, mapping *URLMapping) error
 	GetByShortCode(ctx context.Context, shortCode string) (*URLMapping, error)
 	Exists(ctx context.Context, shortCode string) (bool, error)
+	Deactivate(ctx context.Context, shortCode string) error
 }

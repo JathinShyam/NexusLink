@@ -12,7 +12,7 @@ import (
 
 func TestHandlerCreateSuccess(t *testing.T) {
 	repo := &mockRepo{}
-	handler := NewHandler(NewService(repo, &mockIDGen{}, "http://localhost:8080"))
+	handler := NewHandler(NewService(repo, &mockIDGen{}, "http://localhost:8080", nil))
 
 	body := `{"long_url":"https://example.com/path"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/shorten", bytes.NewBufferString(body))
@@ -34,7 +34,7 @@ func TestHandlerCreateSuccess(t *testing.T) {
 }
 
 func TestHandlerCreateInvalidJSON(t *testing.T) {
-	handler := NewHandler(NewService(&mockRepo{}, &mockIDGen{}, "http://localhost:8080"))
+	handler := NewHandler(NewService(&mockRepo{}, &mockIDGen{}, "http://localhost:8080", nil))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/shorten", bytes.NewBufferString("{"))
 	rec := httptest.NewRecorder()
@@ -49,7 +49,7 @@ func TestHandlerCreateConflict(t *testing.T) {
 	repo := &mockRepo{mappings: map[string]*storage.URLMapping{
 		"dup": {ShortCode: "dup", LongURL: "https://example.com"},
 	}}
-	handler := NewHandler(NewService(repo, &mockIDGen{}, "http://localhost:8080"))
+	handler := NewHandler(NewService(repo, &mockIDGen{}, "http://localhost:8080", nil))
 
 	body := `{"long_url":"https://example.com","custom_alias":"dup"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/shorten", bytes.NewBufferString(body))

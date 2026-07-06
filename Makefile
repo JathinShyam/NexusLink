@@ -1,4 +1,4 @@
-.PHONY: run build test docker-up docker-down migrate-up migrate-down health demo
+.PHONY: run build test docker-up docker-down migrate-up migrate-down health ready demo demo-phase3 e2e gentoken
 .PHONY: logs logs-api logs-postgres logs-migrate logs-all
 .PHONY: logs-tail logs-tail-api logs-tail-postgres logs-tail-migrate logs-tail-all
 
@@ -31,9 +31,23 @@ migrate-down:
 health:
 	curl -sf http://localhost:8080/health
 
+ready:
+	curl -sf http://localhost:8080/ready
+
 demo:
 	@chmod +x scripts/demo-shorten.sh
 	./scripts/demo-shorten.sh
+
+demo-phase3:
+	@chmod +x scripts/demo-phase3.sh
+	./scripts/demo-phase3.sh
+
+e2e:
+	@chmod +x scripts/e2e-test.sh
+	./scripts/e2e-test.sh
+
+gentoken:
+	go run ./cmd/gentoken
 
 logs: logs-api
 

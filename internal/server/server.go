@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/JathinShyam/NexusLink/internal/cors"
 	"github.com/JathinShyam/NexusLink/internal/logging"
 	"github.com/JathinShyam/NexusLink/internal/metrics"
 )
@@ -14,11 +15,12 @@ import (
 type ReadyChecker func(ctx context.Context) error
 
 type Options struct {
-	Shorten  http.Handler
-	Redirect http.Handler
-	Delete   http.Handler
-	Metrics  *metrics.Metrics
-	Ready    ReadyChecker
+	Shorten     http.Handler
+	Redirect    http.Handler
+	Delete      http.Handler
+	Metrics     *metrics.Metrics
+	Ready       ReadyChecker
+	CORSOrigins []string
 }
 
 type Server struct {
@@ -34,7 +36,7 @@ func New(log *slog.Logger, addr string, opts Options) *Server {
 		mux: mux,
 		http: &http.Server{
 			Addr:              addr,
-			Handler:           buildHandler(log, opts.Metrics, mux),
+			Handler:           buildHandler(log, opts.Metrics, opts.CORSOrigins, mux),
 			ReadHeaderTimeout: 5 * time.Second,
 		},
 	}
@@ -59,11 +61,14 @@ func New(log *slog.Logger, addr string, opts Options) *Server {
 	return s
 }
 
-func buildHandler(log *slog.Logger, m *metrics.Metrics, mux *http.ServeMux) http.Handler {
+func buildHandler(log *slog.Logger, m *metrics.Metrics, corsOrigins []string, mux *http.ServeMux) http.Handler {
 	var handler http.Handler = mux
 	handler = requestLogger(log, handler)
 	if m != nil {
 		handler = m.Middleware(handler)
+	}
+	if len(corsOrigins) > 0 {
+		handler = cors.Middleware(corsOrigins)(handler)
 	}
 	return handler
 }

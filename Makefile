@@ -1,6 +1,7 @@
 .PHONY: run build test docker-up docker-down migrate-up migrate-down health ready demo demo-phase3 e2e gentoken
+.PHONY: web-install web-dev web-build
 .PHONY: logs logs-api logs-postgres logs-migrate logs-all
-.PHONY: logs-tail logs-tail-api logs-tail-postgres logs-tail-migrate logs-tail-all
+.PHONY: logs-tail logs-tail-api logs-tail-postgres logs-tail-migrate logs-tail-all docker-logs-web
 
 run:
 	go run ./cmd/api
@@ -19,6 +20,9 @@ docker-down:
 
 docker-logs:
 	docker compose -f deploy/docker-compose.yml logs -f api
+
+docker-logs-web:
+	docker compose -f deploy/docker-compose.yml logs -f web
 
 migrate-up:
 	@chmod +x scripts/migrate.sh
@@ -48,6 +52,15 @@ e2e:
 
 gentoken:
 	go run ./cmd/gentoken
+
+web-install:
+	cd web && npm install
+
+web-dev:
+	cd web && npm run dev
+
+web-build:
+	cd web && npm run build
 
 logs: logs-api
 

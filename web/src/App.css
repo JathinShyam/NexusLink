@@ -1,0 +1,24 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace {
+  flex: 1;
+  padding: 0 var(--space-5) var(--space-7);
+}
+
+.workspace__inner {
+  width: min(100%, 40rem);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 900px) {
+  .workspace__inner {
+    width: min(100%, 44rem);
+  }
+}

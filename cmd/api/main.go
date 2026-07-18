@@ -110,11 +110,12 @@ func main() {
 	)
 
 	srv := server.New(log, cfg.Addr(), server.Options{
-		Shorten:  shortenHandler,
-		Redirect: redirectHandler,
-		Delete:   deleteHandler,
-		Metrics:  m,
-		Ready:    readyCheck(pool, redisClient),
+		Shorten:     shortenHandler,
+		Redirect:    redirectHandler,
+		Delete:      deleteHandler,
+		Metrics:     m,
+		Ready:       readyCheck(pool, redisClient),
+		CORSOrigins: cfg.CORSOrigins,
 	})
 
 	go func() {

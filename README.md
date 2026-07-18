@@ -703,12 +703,13 @@ NexusLink/
 
 ## Local Development
 
-> **Status:** Phase 1 foundation implemented.
+> **Status:** Phase 3 scale core + React frontend UI.
 
 ### Prerequisites
 
 - Go 1.22+
 - Docker & Docker Compose
+- Node.js 20+ (for the frontend)
 - `make` (optional)
 
 ### Quick start
@@ -717,9 +718,24 @@ NexusLink/
 git clone https://github.com/JathinShyam/NexusLink.git
 cd NexusLink
 cp .env.example .env
-make docker-up          # Postgres + migrate + API
+make docker-up          # Postgres + Redis + migrate + API
 make health             # curl /health → {"status":"ok"}
 ```
+
+### Frontend UI
+
+**Docker (recommended):** after `make docker-up`, open [http://localhost:3000](http://localhost:3000). Nginx serves the SPA and proxies `/api` to the API container.
+
+**Local Vite (hot reload):**
+
+```bash
+make web-install        # once
+make web-dev            # http://localhost:5173
+```
+
+Vite proxies `/api` to the API on `:8080`. Paste a JWT from `make gentoken` to create owned links and delete by short code.
+
+Or call the API directly from the browser by setting `VITE_API_BASE_URL=http://localhost:8080` (see `web/.env.example`); CORS is enabled via `CORS_ORIGINS`.
 
 Run the API locally (Postgres must be up):
 
@@ -750,16 +766,18 @@ curl -X POST http://localhost:8080/api/v1/shorten \
 curl -I http://localhost:8080/<short_code>
 ```
 
-### Environment variables (planned)
+### Environment variables
 
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | Postgres connection string |
 | `REDIS_URL` | Redis address |
-| `KAFKA_BROKERS` | Comma-separated brokers |
-| `CLICKHOUSE_URL` | HTTP/native ClickHouse URL |
 | `JWT_SECRET` | Signing key |
 | `SNOWFLAKE_MACHINE_ID` | 0–1023 per instance |
+| `CORS_ORIGINS` | Comma-separated allowed frontend origins |
+| `KAFKA_BROKERS` | Comma-separated brokers (Phase 4) |
+| `CLICKHOUSE_URL` | HTTP/native ClickHouse URL (Phase 4) |
+| `VITE_API_BASE_URL` | Optional absolute API base for the SPA |
 
 ---
 

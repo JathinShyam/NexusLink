@@ -1,0 +1,58 @@
+.result__url {
+  margin-bottom: var(--space-5);
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  word-break: break-all;
+}
+
+.result__url a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.result__url a:hover {
+  text-decoration: underline;
+}
+
+.result__meta {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+}
+
+.result__meta dt {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.result__meta dd {
+  margin: var(--space-1) 0 0;
+}
+
+.result__meta code {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.result__target {
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.result__actions .btn--primary {
+  border: none;
+}

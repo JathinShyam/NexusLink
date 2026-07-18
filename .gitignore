@@ -31,4 +31,8 @@ deploy/data/
 logs/**/*
 !logs/**/.gitkeep
 
+# Frontend
+web/node_modules/
+web/dist/
+
 .history/

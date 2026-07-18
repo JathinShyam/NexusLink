@@ -1,0 +1,35 @@
+:root {
+  /* Signal board palette */
+  --bg-deep: #0b1220;
+  --bg-mid: #142033;
+  --bg-elevated: #1a2740;
+  --bg-panel: rgba(26, 39, 64, 0.72);
+  --text: #e8eef7;
+  --text-muted: #9aabc4;
+  --accent: #2dd4bf;
+  --accent-dim: #1a9e8f;
+  --accent-soft: rgba(45, 212, 191, 0.14);
+  --error: #f07178;
+  --error-soft: rgba(240, 113, 120, 0.12);
+  --success: #7ee787;
+  --border: rgba(232, 238, 247, 0.1);
+  --border-strong: rgba(45, 212, 191, 0.35);
+
+  --font-display: "Syne", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+
+  --radius: 6px;
+  --max-width: 68rem;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration: 420ms;
+}

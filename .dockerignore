@@ -3,5 +3,7 @@ bin/
 .env
 deploy/data/
 roadmap/
+web/node_modules/
+web/dist/
 *.md
 !README.md

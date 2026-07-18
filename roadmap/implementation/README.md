@@ -10,7 +10,8 @@ We follow the **roadmap folder** numbering (not the README's older "Implementati
 |---------------|--------|-------------------|--------|
 | Phase 1 | [phase-01-foundation.md](./phase-01-foundation.md) | (setup only) | Complete — commit `aab5677` |
 | Phase 2 | [phase-02-mvp-shortener.md](./phase-02-mvp-shortener.md) | README Phase 1 — MVP | Complete — commit `cf3cfad` |
-| Phase 3 | [phase-03-scale-core.md](./phase-03-scale-core.md) | README Phase 2 — Scale Core | Complete — uncommitted at time of writing |
+| Phase 3 | [phase-03-scale-core.md](./phase-03-scale-core.md) | README Phase 2 — Scale Core | Complete |
+| Frontend UI | [phase-frontend-ui.md](./phase-frontend-ui.md) | (between Phase 3 and 4) | Complete |
 | Phase 4 | — | README Phase 3 — Analytics | Not started |
 | Phase 5+ | — | README Phase 4+ | Not started |
 
@@ -28,6 +29,7 @@ make health          # Phase 1
 make demo            # Phase 2
 make e2e             # Phase 3 (full automated suite)
 make demo-phase3     # Phase 3 (human-readable walkthrough)
+make web-dev         # Frontend UI at http://localhost:5173
 go test ./...        # all unit tests
 ```
 

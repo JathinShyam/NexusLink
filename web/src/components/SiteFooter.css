@@ -1,0 +1,36 @@
+.footer {
+  margin-top: var(--space-8);
+  padding: var(--space-6) var(--space-5) var(--space-7);
+  border-top: 1px solid var(--border);
+}
+
+.footer__inner {
+  width: min(100%, var(--max-width));
+  margin: 0 auto;
+}
+
+.footer__brand {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.footer__note,
+.footer__meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  max-width: 42rem;
+}
+
+.footer__meta {
+  margin-top: var(--space-3);
+}
+
+.footer__meta code {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+  color: var(--text);
+}

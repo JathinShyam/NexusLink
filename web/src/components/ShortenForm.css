@@ -1,0 +1,21 @@
+.shorten__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.shorten__row {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.shorten__submit {
+  align-self: flex-start;
+  border: none;
+}
+
+@media (min-width: 640px) {
+  .shorten__row {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}

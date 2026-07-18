@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -25,6 +26,7 @@ type Config struct {
 	ShortenRateWindow time.Duration
 	RedirectBucketCapacity int64
 	RedirectRefillPerSec   float64
+	CORSOrigins            []string
 }
 
 func Load() (*Config, error) {
@@ -81,6 +83,7 @@ func Load() (*Config, error) {
 		ShortenRateWindow:      time.Duration(shortenWindowSec) * time.Second,
 		RedirectBucketCapacity: bucketCapacity,
 		RedirectRefillPerSec:   refillRate,
+		CORSOrigins:            parseCSV(getEnv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")),
 	}
 
 	return cfg, nil
@@ -95,4 +98,19 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func parseCSV(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }

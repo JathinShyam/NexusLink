@@ -35,6 +35,7 @@ Detailed, file-by-file documentation of what was built in each phase:
 - **[implementation/phase-01-foundation.md](./implementation/phase-01-foundation.md)**
 - **[implementation/phase-02-mvp-shortener.md](./implementation/phase-02-mvp-shortener.md)**
 - **[implementation/phase-03-scale-core.md](./implementation/phase-03-scale-core.md)**
+- **[implementation/phase-frontend-ui.md](./implementation/phase-frontend-ui.md)** — React landing + shorten/manage UI
 
 ## Burnout Prevention Rules
 

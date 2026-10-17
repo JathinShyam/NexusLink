@@ -1,0 +1,89 @@
+name: Bug report
+description: Something isn't working as expected
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please include enough detail to reproduce the bug.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands or requests. `make e2e` output is very helpful.
+      placeholder: |
+        1. make docker-up
+        2. curl -X POST localhost:8080/api/v1/shorten -d '...'
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - API (shorten / delete)
+        - Redirect
+        - Cache / Redis
+        - Rate limiting
+        - Auth / JWT
+        - Storage / Postgres
+        - Frontend
+        - Docker / Compose
+        - CI
+        - Docs
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Relevant logs (`make logs`, container output, stack traces).
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Commit / image tag
+      description: Output of `git rev-parse --short HEAD`.
+      placeholder: e820f1a
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Go version, Docker version.
+      placeholder: Ubuntu 24.04, Go 1.25, Docker 29
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true

@@ -449,6 +449,10 @@ Base URL: `https://nexuslink.example` (or local `http://localhost:8080`)
 | `GET` | `/health` | Liveness |
 | `GET` | `/ready` | Readiness (DB, Redis, Kafka) |
 
+> The machine-readable contract for the implemented endpoints lives in
+> [`api/openapi.yaml`](api/openapi.yaml). Validate it with
+> `npx --yes @redocly/cli lint api/openapi.yaml` (also enforced in CI).
+
 ### `POST /api/v1/shorten`
 
 **Request:**
@@ -704,11 +708,10 @@ NexusLink/
 ```
 
 > **Implemented today:** `cmd/api`, `cmd/gentoken`, `internal/*` (Phases 1–3),
-> `web/`, `docs/`, `deploy/` (Compose + Dockerfiles), `migrations/`, `scripts/`,
-> and `.github/workflows/`.
+> `web/`, `docs/`, `api/openapi.yaml`, `deploy/` (Compose + Dockerfiles),
+> `migrations/`, `scripts/`, and `.github/` (CI + PR/issue templates).
 > **Still planned:** `cmd/redirect`, `cmd/consumer`, `internal/analytics`,
-> `api/openapi.yaml`, `proto/`, `deploy/k8s`, `deploy/terraform`, and
-> `scripts/loadtest/`.
+> `proto/`, `deploy/k8s`, `deploy/terraform`, and `scripts/loadtest/`.
 
 ---
 
@@ -800,8 +803,9 @@ The pipeline lives in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and
 
 1. **Backend** — `gofmt` check, `go vet`, `golangci-lint`, `go test -race` with coverage, and `go build`.
 2. **Frontend** — `npm ci`, `oxlint`, and production `vite build`.
-3. **Integration** — boots the Compose stack (Postgres + Redis + migrate + API) and runs `make e2e`.
-4. **Docker** — builds the `api` and `web` images; on pushes to the default branch it also pushes them to GHCR (`ghcr.io/<owner>/<repo>/{api,web}`) tagged by branch, short SHA, and `latest`.
+3. **Contract** — lints [`api/openapi.yaml`](api/openapi.yaml) with Redocly.
+4. **Integration** — boots the Compose stack (Postgres + Redis + migrate + API) and runs `make e2e`.
+5. **Docker** — builds the `api` and `web` images; on pushes to the default branch it also pushes them to GHCR (`ghcr.io/<owner>/<repo>/{api,web}`) tagged by branch, short SHA, and `latest`.
 
 ### Target cloud (flexible)
 

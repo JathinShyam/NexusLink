@@ -1,0 +1,349 @@
+openapi: 3.0.3
+
+info:
+  title: NexusLink API
+  version: 0.3.0
+  description: |
+    REST contract for the NexusLink API as implemented through Phase 3
+    (scale core). The analytics endpoints (Phase 4) are not part of this
+    document yet.
+
+    Notes:
+    - `GET /{short_code}` is served by the redirect handler. Literal routes
+      (`/health`, `/ready`, `/metrics`, `/api/v1/*`) take precedence in the
+      router, so they are documented separately below.
+    - Errors use a consistent shape: `{"error": "...", "code": "..."}`.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local (Docker Compose / `make run`)
+
+# Authentication is opt-in per operation (shorten) or required (delete).
+# Public operations below declare `security: []` to opt out explicitly.
+security: []
+
+tags:
+  - name: Links
+    description: Create and delete short links.
+  - name: Redirect
+    description: Resolve a short code to its destination.
+  - name: Operations
+    description: Health, readiness, and metrics.
+
+paths:
+  /api/v1/shorten:
+    post:
+      tags: [Links]
+      operationId: createShortLink
+      summary: Create a short link
+      description: |
+        Creates a short code for a long URL. If an `Authorization: Bearer`
+        header is present, the link is owned by the token's `user_id`
+        (required to delete it later).
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShortenRequest'
+            examples:
+              minimal:
+                summary: Anonymous shorten
+                value:
+                  long_url: https://example.com/very/long/path
+              owned-with-alias:
+                summary: Owned link with a custom alias and expiry
+                value:
+                  long_url: https://example.com/launch
+                  custom_alias: launch-2026
+                  expires_in_seconds: 86400
+      responses:
+        '201':
+          description: Short link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: The requested custom alias is already taken.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: custom alias is already taken
+                code: ALIAS_TAKEN
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/links/{short_code}:
+    delete:
+      tags: [Links]
+      operationId: deleteShortLink
+      summary: Soft-delete an owned short link
+      description: |
+        Deactivates a link owned by the authenticated user. Anonymous links
+        (`user_id` is null) cannot be deleted through the API.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ShortCode'
+      responses:
+        '204':
+          description: Link deactivated.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The link belongs to another user, or is anonymous.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: anonymous links cannot be deleted
+                code: FORBIDDEN
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /{short_code}:
+    get:
+      tags: [Redirect]
+      operationId: redirect
+      summary: Redirect to the long URL
+      description: |
+        Resolves `short_code` (Redis read-through cache, then Postgres) and
+        returns a `302 Found` redirect. Expired or soft-deleted links return
+        `404`.
+      parameters:
+        - $ref: '#/components/parameters/ShortCode'
+      responses:
+        '302':
+          description: Redirect to the target URL.
+          headers:
+            Location:
+              description: The long URL to redirect to.
+              schema:
+                type: string
+                format: uri
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /health:
+    get:
+      tags: [Operations]
+      operationId: health
+      summary: Liveness probe
+      responses:
+        '200':
+          description: The process is running.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+
+  /ready:
+    get:
+      tags: [Operations]
+      operationId: ready
+      summary: Readiness probe
+      description: Checks that Postgres and Redis are reachable.
+      responses:
+        '200':
+          description: Dependencies are reachable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ready'
+        '503':
+          description: A dependency is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotReady'
+
+  /metrics:
+    get:
+      tags: [Operations]
+      operationId: metrics
+      summary: Prometheus metrics
+      description: Prometheus text exposition format.
+      responses:
+        '200':
+          description: Metrics in Prometheus text exposition format.
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        HS256 JWT issued with `user_id`, `iat`, and `exp` claims. Generate a
+        development token with `make gentoken`.
+
+  parameters:
+    ShortCode:
+      name: short_code
+      in: path
+      required: true
+      description: The base62 or custom alias short code.
+      schema:
+        type: string
+        minLength: 3
+        maxLength: 16
+        pattern: '^[A-Za-z0-9_-]+$'
+        example: aB3xY9z
+
+  schemas:
+    ShortenRequest:
+      type: object
+      required: [long_url]
+      properties:
+        long_url:
+          type: string
+          format: uri
+          description: Destination URL. Must be `http` or `https`; private and local addresses are rejected.
+          example: https://example.com/very/long/path
+        custom_alias:
+          type: string
+          minLength: 3
+          maxLength: 16
+          pattern: '^[A-Za-z0-9_-]+$'
+          description: Optional user-chosen short code. Must be unique.
+          example: launch-2026
+        expires_in_seconds:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Optional time-to-live in seconds. Omit for a non-expiring link.
+          example: 86400
+
+    ShortenResponse:
+      type: object
+      required: [short_code, short_url, long_url]
+      properties:
+        short_code:
+          type: string
+          example: aB3xY9z
+        short_url:
+          type: string
+          format: uri
+          example: http://localhost:8080/aB3xY9z
+        long_url:
+          type: string
+          format: uri
+          example: https://example.com/very/long/path
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Present only when an expiry was requested.
+
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          description: Human-readable message.
+          example: rate limit exceeded
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: RATE_LIMITED
+
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+
+    Ready:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready]
+
+    NotReady:
+      type: object
+      required: [status, error]
+      properties:
+        status:
+          type: string
+          enum: [not_ready]
+        error:
+          type: string
+          example: 'database: connection refused'
+
+  responses:
+    BadRequest:
+      description: |
+        Invalid request. Possible codes: `INVALID_JSON`, `INVALID_URL`,
+        `INVALID_ALIAS`, `INVALID_REQUEST`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'invalid url: url must be a valid http or https URL'
+            code: INVALID_URL
+    Unauthorized:
+      description: Missing, malformed, or expired bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: invalid or expired token
+            code: UNAUTHORIZED
+    NotFound:
+      description: The short code does not exist, is inactive, or has expired.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: short link not found
+            code: NOT_FOUND
+    TooManyRequests:
+      description: The client exceeded its rate limit.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: rate limit exceeded
+            code: RATE_LIMITED
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: failed to create short url
+            code: INTERNAL_ERROR

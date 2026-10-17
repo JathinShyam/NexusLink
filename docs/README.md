@@ -13,6 +13,9 @@ requirements, API, and benchmarks; this folder explains the *why* and the *how*.
 | [`benchmarks/`](./benchmarks/) | Load-test methodology and results (Phase 4+) |
 | [`runbook.md`](./runbook.md) | Local development, operations, and failure-mode playbook |
 
+Related, outside this folder: the machine-readable REST contract at
+[`api/openapi.yaml`](../api/openapi.yaml).
+
 ## Where to start
 
 - **New to the project?** Read the [top-level README](../README.md), then

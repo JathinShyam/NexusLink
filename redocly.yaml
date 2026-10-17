@@ -1,0 +1,12 @@
+# Redocly CLI configuration for the NexusLink OpenAPI contract.
+# Run: npx --yes @redocly/cli lint api/openapi.yaml
+extends:
+  - recommended
+
+rules:
+  # NexusLink is local-first; the documented server is http://localhost:8080.
+  no-server-example.com: off
+  # `GET /{short_code}` returns 302 (not 2xx) by design, and the operations
+  # probes (/health, /ready, /metrics) legitimately have no 4xx responses.
+  operation-2xx-response: off
+  operation-4xx-response: off

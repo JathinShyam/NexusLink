@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/JathinShyam/NexusLink/internal/analytics"
 	"github.com/JathinShyam/NexusLink/internal/auth"
 	"github.com/JathinShyam/NexusLink/internal/cache"
 	"github.com/JathinShyam/NexusLink/internal/config"
@@ -90,6 +91,11 @@ func main() {
 	linksService := links.NewService(repo, urlCache)
 	jwtService := auth.NewJWT(cfg.JWTSecret, cfg.JWTTTL)
 
+	runCtx, stopRun := context.WithCancel(context.Background())
+	defer stopRun()
+
+	publisher := newAnalyticsPublisher(runCtx, log, m, cfg)
+
 	shortenLimiter := ratelimit.NewFixedWindowLimiter(
 		redisClient, "rl:shorten", cfg.ShortenRateLimit, cfg.ShortenRateWindow,
 	)
@@ -103,7 +109,7 @@ func main() {
 		),
 	)
 	redirectHandler := ratelimit.Middleware(redirectLimiter, "redirect", m)(
-		http.HandlerFunc(redirect.NewHandler(resolver).Serve),
+		http.HandlerFunc(redirect.NewHandler(resolver, publisher).Serve),
 	)
 	deleteHandler := auth.Middleware(jwtService)(
 		http.HandlerFunc(links.NewHandler(linksService).Delete),
@@ -145,6 +151,22 @@ func cacheForRedis(ctx context.Context, log *slog.Logger, client *redis.Client) 
 	}
 	log.Info("redis cache connected")
 	return cache.NewRedisCache(client)
+}
+
+// newAnalyticsPublisher builds the click-event publisher. Analytics is
+// fail-open: when disabled it is a no-op, and the async publisher never blocks
+// the redirect path.
+func newAnalyticsPublisher(ctx context.Context, log *slog.Logger, m *metrics.Metrics, cfg *config.Config) analytics.Publisher {
+	if !cfg.AnalyticsEnabled {
+		log.Info("analytics disabled")
+		return analytics.NoopPublisher{}
+	}
+
+	pub := analytics.NewAsyncPublisher(analytics.NewLogSink(log), cfg.AnalyticsBufferSize, log, m)
+	go pub.Run(ctx)
+
+	log.Info("analytics enabled", "sink", "log", "buffer_size", cfg.AnalyticsBufferSize)
+	return pub
 }
 
 func readyCheck(pool *pgxpool.Pool, redisClient *redis.Client) server.ReadyChecker {

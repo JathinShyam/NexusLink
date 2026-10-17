@@ -622,6 +622,7 @@ Total estimate: **2–3 months part-time**. Do not skip measurement between phas
 - `http_requests_total{method, path, status}`
 - `http_request_duration_seconds` histogram
 - `cache_hits_total` / `cache_misses_total`
+- `click_events_published_total` / `click_events_dropped_total` / `click_events_errors_total`
 - `kafka_produce_errors_total`
 - `rate_limit_exceeded_total`
 - `db_query_duration_seconds`
@@ -707,11 +708,13 @@ NexusLink/
 └── .github/workflows/        # CI (ci.yml)
 ```
 
-> **Implemented today:** `cmd/api`, `cmd/gentoken`, `internal/*` (Phases 1–3),
-> `web/`, `docs/`, `api/openapi.yaml`, `deploy/` (Compose + Dockerfiles),
-> `migrations/`, `scripts/`, and `.github/` (CI + PR/issue templates).
-> **Still planned:** `cmd/redirect`, `cmd/consumer`, `internal/analytics`,
-> `proto/`, `deploy/k8s`, `deploy/terraform`, and `scripts/loadtest/`.
+> **Implemented today:** `cmd/api`, `cmd/gentoken`, `internal/*` (Phases 1–3 plus
+> the Phase 4 analytics ingestion seam), `web/`, `docs/`, `api/openapi.yaml`,
+> `deploy/` (Compose + Dockerfiles), `migrations/`, `scripts/`, and `.github/`
+> (CI + PR/issue templates).
+> **Still planned:** `cmd/consumer`, the Kafka sink + ClickHouse store, the
+> analytics API, `cmd/redirect`, `proto/`, `deploy/k8s`, `deploy/terraform`, and
+> `scripts/loadtest/`.
 
 ---
 
@@ -789,6 +792,8 @@ curl -I http://localhost:8080/<short_code>
 | `JWT_SECRET` | Signing key |
 | `SNOWFLAKE_MACHINE_ID` | 0–1023 per instance |
 | `CORS_ORIGINS` | Comma-separated allowed frontend origins |
+| `ANALYTICS_ENABLED` | Publish click events on redirect (default `false`) |
+| `ANALYTICS_BUFFER_SIZE` | Non-blocking event buffer size before dropping (default `1024`) |
 | `KAFKA_BROKERS` | Comma-separated brokers (Phase 4) |
 | `CLICKHOUSE_URL` | HTTP/native ClickHouse URL (Phase 4) |
 | `VITE_API_BASE_URL` | Optional absolute API base for the SPA |

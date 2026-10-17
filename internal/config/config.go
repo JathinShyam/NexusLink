@@ -27,6 +27,8 @@ type Config struct {
 	RedirectBucketCapacity int64
 	RedirectRefillPerSec   float64
 	CORSOrigins            []string
+	AnalyticsEnabled       bool
+	AnalyticsBufferSize    int
 }
 
 func Load() (*Config, error) {
@@ -67,6 +69,16 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid JWT_TTL_HOURS: %w", err)
 	}
 
+	analyticsEnabled, err := strconv.ParseBool(getEnv("ANALYTICS_ENABLED", "false"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid ANALYTICS_ENABLED: %w", err)
+	}
+
+	analyticsBufferSize, err := strconv.Atoi(getEnv("ANALYTICS_BUFFER_SIZE", "1024"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid ANALYTICS_BUFFER_SIZE: %w", err)
+	}
+
 	cfg := &Config{
 		Env:                    getEnv("ENV", "development"),
 		Port:                   port,
@@ -84,6 +96,8 @@ func Load() (*Config, error) {
 		RedirectBucketCapacity: bucketCapacity,
 		RedirectRefillPerSec:   refillRate,
 		CORSOrigins:            parseCSV(getEnv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")),
+		AnalyticsEnabled:       analyticsEnabled,
+		AnalyticsBufferSize:    analyticsBufferSize,
 	}
 
 	return cfg, nil

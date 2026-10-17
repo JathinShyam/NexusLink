@@ -16,6 +16,9 @@ type Metrics struct {
 	cacheHits         prometheus.Counter
 	cacheMisses       prometheus.Counter
 	rateLimitExceeded *prometheus.CounterVec
+	clickEventsOK     prometheus.Counter
+	clickEventsDrop   prometheus.Counter
+	clickEventsErr    prometheus.Counter
 }
 
 func New() *Metrics {
@@ -41,11 +44,27 @@ func New() *Metrics {
 			Name: "rate_limit_exceeded_total",
 			Help: "Rate limit rejections",
 		}, []string{"endpoint"}),
+		clickEventsOK: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "click_events_published_total",
+			Help: "Click events delivered to the analytics sink",
+		}),
+		clickEventsDrop: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "click_events_dropped_total",
+			Help: "Click events dropped because the buffer was full",
+		}),
+		clickEventsErr: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "click_events_errors_total",
+			Help: "Click events that failed to reach the analytics sink",
+		}),
 	}
 }
 
 func (m *Metrics) CacheHit()  { m.cacheHits.Inc() }
 func (m *Metrics) CacheMiss() { m.cacheMisses.Inc() }
+
+func (m *Metrics) ClickEventPublished() { m.clickEventsOK.Inc() }
+func (m *Metrics) ClickEventDropped()   { m.clickEventsDrop.Inc() }
+func (m *Metrics) ClickEventError()     { m.clickEventsErr.Inc() }
 
 func (m *Metrics) RateLimitExceeded(endpoint string) {
 	m.rateLimitExceeded.WithLabelValues(endpoint).Inc()

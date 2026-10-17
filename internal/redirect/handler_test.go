@@ -7,9 +7,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JathinShyam/NexusLink/internal/analytics"
 	"github.com/JathinShyam/NexusLink/internal/cache"
 	"github.com/JathinShyam/NexusLink/internal/storage"
 )
+
+type recordingPublisher struct {
+	events []analytics.Event
+}
+
+func (p *recordingPublisher) Publish(_ context.Context, e analytics.Event) {
+	p.events = append(p.events, e)
+}
 
 type mockRepo struct {
 	mapping *storage.URLMapping
@@ -41,7 +50,7 @@ func TestHandlerRedirectSuccess(t *testing.T) {
 			HTTPStatus: http.StatusFound,
 		},
 	}, cache.NoopCache{}, nil)
-	handler := NewHandler(resolver)
+	handler := NewHandler(resolver, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/abc", nil)
 	rec := httptest.NewRecorder()
@@ -56,7 +65,7 @@ func TestHandlerRedirectSuccess(t *testing.T) {
 }
 
 func TestHandlerRedirectNotFound(t *testing.T) {
-	handler := NewHandler(NewResolver(&mockRepo{}, cache.NoopCache{}, nil))
+	handler := NewHandler(NewResolver(&mockRepo{}, cache.NoopCache{}, nil), nil)
 	req := httptest.NewRequest(http.MethodGet, "/missing", nil)
 	rec := httptest.NewRecorder()
 	handler.Serve(rec, req)
@@ -76,7 +85,7 @@ func TestHandlerRedirectExpired(t *testing.T) {
 			ExpiresAt: &expired,
 		},
 	}, cache.NoopCache{}, nil)
-	handler := NewHandler(resolver)
+	handler := NewHandler(resolver, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/expired", nil)
 	rec := httptest.NewRecorder()
@@ -84,6 +93,40 @@ func TestHandlerRedirectExpired(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+}
+
+func TestHandlerPublishesClickEventOnSuccess(t *testing.T) {
+	publisher := &recordingPublisher{}
+	resolver := NewResolver(&mockRepo{
+		mapping: &storage.URLMapping{
+			ShortCode:  "abc",
+			LongURL:    "https://example.com",
+			IsActive:   true,
+			HTTPStatus: http.StatusFound,
+		},
+	}, cache.NoopCache{}, nil)
+	handler := NewHandler(resolver, publisher)
+
+	req := httptest.NewRequest(http.MethodGet, "/abc", nil)
+	handler.Serve(httptest.NewRecorder(), req)
+
+	if len(publisher.events) != 1 {
+		t.Fatalf("published %d events, want 1", len(publisher.events))
+	}
+	if got := publisher.events[0].ShortCode; got != "abc" {
+		t.Errorf("event ShortCode = %q, want abc", got)
+	}
+}
+
+func TestHandlerDoesNotPublishOnMiss(t *testing.T) {
+	publisher := &recordingPublisher{}
+	handler := NewHandler(NewResolver(&mockRepo{}, cache.NoopCache{}, nil), publisher)
+
+	handler.Serve(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/missing", nil))
+
+	if len(publisher.events) != 0 {
+		t.Fatalf("published %d events on miss, want 0", len(publisher.events))
 	}
 }
 

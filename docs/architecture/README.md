@@ -47,8 +47,34 @@ flowchart TB
 ```
 
 Solid rectangles are implemented today. The Kafka → consumer → ClickHouse path
-from the README is deliberately absent here until Phase 4 — the redirect hot path
-currently has **no analytics side effects**.
+from the README is not wired yet: Phase 4 currently ships only the **ingestion
+seam** on the redirect path (see below), with the default sink writing click
+events to the structured log.
+
+## Click-event ingestion (Phase 4, in progress)
+
+The redirect hot path never talks to Kafka or a database for analytics. It hands
+the event to an `analytics.Publisher`, which is non-blocking and fail-open:
+
+```mermaid
+flowchart LR
+    RED[redirect.Handler] -->|Publish, never blocks| AP["analytics.AsyncPublisher<br/>(bounded channel)"]
+    AP -->|Send| Sink{{Sink}}
+    Sink -->|default today| Log[LogSink]
+    Sink -.->|Phase 4| Kafka[(Kafka: url_clicks)]
+    AP -.->|buffer full| Drop[drop + click_events_dropped_total]
+```
+
+- `Event` captures `short_code`, `timestamp`, `ip`, `user_agent`, `referrer`,
+  and a `request_id` (inbound `X-Request-Id` or generated) for future dedupe.
+- `AsyncPublisher` enqueues onto a bounded channel and **never blocks**; when the
+  buffer is full it drops and increments `click_events_dropped_total`.
+- `Sink` is the pluggable delivery point (`LogSink` today; a Kafka sink next).
+- Disabled by default (`ANALYTICS_ENABLED=false`), so behaviour is unchanged
+  unless opted in.
+
+Still to come: a Kafka `Sink`, `cmd/consumer` → ClickHouse, the analytics API,
+and the dashboard.
 
 ## Redirect path (read-through cache)
 
@@ -105,6 +131,7 @@ DELETE /api/v1/links/{code}     → auth.Required           → links.Handler
 | `internal/auth` | HS256 JWT issue/parse + middleware |
 | `internal/storage` | Postgres repository |
 | `internal/idgen` | Snowflake + sequence generators |
+| `internal/analytics` | Click-event model, non-blocking publisher, sinks |
 | `internal/metrics` | Prometheus counters/histograms |
 | `internal/cors` | Frontend origin allowlist |
 

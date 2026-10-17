@@ -52,7 +52,23 @@ Redis `:6379`.
 | `http_requests_total{method,path,status}` | error-rate spikes (5xx) |
 | `http_request_duration_seconds` | p99 redirect latency (target < 100 ms) |
 | `cache_hits_total` / `cache_misses_total` | hit-ratio collapse ⇒ Redis problem |
+| `click_events_published_total` / `click_events_dropped_total` / `click_events_errors_total` | analytics buffer pressure or sink failures |
 | `rate_limit_exceeded_total{endpoint}` | a client being throttled (429s) |
+
+## Analytics (Phase 4, in progress)
+
+Click events are captured on the redirect path but **disabled by default**.
+
+```bash
+ANALYTICS_ENABLED=true make run     # or set it in .env / compose
+curl -s -o /dev/null "http://localhost:8080/<short_code>"
+grep "click event" logs/api/app.log
+```
+
+Today the default sink is `LogSink` (events appear in the structured log). The
+Kafka sink, consumer, and ClickHouse store are the next increment; until then
+`click_events_dropped_total` rising means the buffer filled because the sink is
+too slow.
 
 ## Migrations
 

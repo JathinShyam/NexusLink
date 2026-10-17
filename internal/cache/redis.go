@@ -41,19 +41,11 @@ func (c *RedisCache) Get(ctx context.Context, shortCode string) (Entry, bool) {
 		return Entry{}, false
 	}
 
-	return Entry{
-		LongURL:    cached.LongURL,
-		HTTPStatus: cached.HTTPStatus,
-		ExpiresAt:  cached.ExpiresAt,
-	}, true
+	return Entry(cached), true
 }
 
 func (c *RedisCache) Set(ctx context.Context, shortCode string, entry Entry) error {
-	payload, err := json.Marshal(redisEntry{
-		LongURL:    entry.LongURL,
-		HTTPStatus: entry.HTTPStatus,
-		ExpiresAt:  entry.ExpiresAt,
-	})
+	payload, err := json.Marshal(redisEntry(entry))
 	if err != nil {
 		return fmt.Errorf("marshal cache entry: %w", err)
 	}

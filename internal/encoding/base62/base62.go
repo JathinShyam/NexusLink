@@ -9,7 +9,7 @@ import (
 const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var (
-	ErrEmptyInput = errors.New("base62: empty input")
+	ErrEmptyInput  = errors.New("base62: empty input")
 	ErrInvalidChar = errors.New("base62: invalid character")
 )
 

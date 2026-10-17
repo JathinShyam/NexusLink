@@ -19,7 +19,7 @@ func TestSetupWritesToFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Setup() error = %v", err)
 	}
-	defer closer.Close()
+	defer func() { _ = closer.Close() }()
 
 	log.Info("file log test", "component", "logging")
 
@@ -50,7 +50,7 @@ func TestSetupAppendsToExistingFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Setup() error = %v", err)
 	}
-	defer closer.Close()
+	defer func() { _ = closer.Close() }()
 
 	log.Info("appended line")
 

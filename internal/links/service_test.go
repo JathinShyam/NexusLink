@@ -14,7 +14,7 @@ type mockRepo struct {
 }
 
 func (m *mockRepo) Create(context.Context, *storage.URLMapping) error { return nil }
-func (m *mockRepo) Exists(context.Context, string) (bool, error)    { return false, nil }
+func (m *mockRepo) Exists(context.Context, string) (bool, error)      { return false, nil }
 
 func (m *mockRepo) GetByShortCode(_ context.Context, shortCode string) (*storage.URLMapping, error) {
 	if mapping, ok := m.mappings[shortCode]; ok {

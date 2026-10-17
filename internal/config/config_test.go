@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"testing"
 )
 
@@ -58,7 +57,7 @@ func TestLoadInvalidPort(t *testing.T) {
 }
 
 func TestGetEnvFallback(t *testing.T) {
-	os.Unsetenv("NEXUSLINK_TEST_VAR")
+	t.Setenv("NEXUSLINK_TEST_VAR", "")
 	if got := getEnv("NEXUSLINK_TEST_VAR", "fallback"); got != "fallback" {
 		t.Errorf("getEnv() = %q, want fallback", got)
 	}

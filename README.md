@@ -783,12 +783,14 @@ curl -I http://localhost:8080/<short_code>
 
 ## CI/CD & Deployment
 
-### GitHub Actions (planned)
+### GitHub Actions
 
-1. Lint (`golangci-lint`)
-2. Unit + integration tests (testcontainers for Postgres/Redis/Kafka)
-3. Build and push Docker images
-4. Optional: deploy to staging on `main`
+The pipeline lives in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and runs on pushes to `master`/`main`, on pull requests, and manually:
+
+1. **Backend** — `gofmt` check, `go vet`, `golangci-lint`, `go test -race` with coverage, and `go build`.
+2. **Frontend** — `npm ci`, `oxlint`, and production `vite build`.
+3. **Integration** — boots the Compose stack (Postgres + Redis + migrate + API) and runs `make e2e`.
+4. **Docker** — builds the `api` and `web` images; on pushes to the default branch it also pushes them to GHCR (`ghcr.io/<owner>/<repo>/{api,web}`) tagged by branch, short SHA, and `latest`.
 
 ### Target cloud (flexible)
 

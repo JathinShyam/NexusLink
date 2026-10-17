@@ -23,10 +23,7 @@ const (
 )
 
 func colorsEnabled() bool {
-	if os.Getenv("NO_COLOR") != "" {
-		return false
-	}
-	return true
+	return os.Getenv("NO_COLOR") == ""
 }
 
 func paint(color, text string) string {

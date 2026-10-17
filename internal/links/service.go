@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	ErrNotFound   = errors.New("link not found")
-	ErrForbidden  = errors.New("not allowed to delete this link")
-	ErrNotOwned   = errors.New("anonymous links cannot be deleted")
+	ErrNotFound  = errors.New("link not found")
+	ErrForbidden = errors.New("not allowed to delete this link")
+	ErrNotOwned  = errors.New("anonymous links cannot be deleted")
 )
 
 type Service struct {

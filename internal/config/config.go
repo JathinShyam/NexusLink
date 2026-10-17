@@ -11,19 +11,19 @@ import (
 )
 
 type Config struct {
-	Env         string
-	Port        int
-	LogLevel    string
-	LogDir      string
-	LogFile     string
-	DatabaseURL string
-	RedisURL    string
-	BaseURL     string
-	JWTSecret   string
-	JWTTTL      time.Duration
-	MachineID   int64
-	ShortenRateLimit int64
-	ShortenRateWindow time.Duration
+	Env                    string
+	Port                   int
+	LogLevel               string
+	LogDir                 string
+	LogFile                string
+	DatabaseURL            string
+	RedisURL               string
+	BaseURL                string
+	JWTSecret              string
+	JWTTTL                 time.Duration
+	MachineID              int64
+	ShortenRateLimit       int64
+	ShortenRateWindow      time.Duration
 	RedirectBucketCapacity int64
 	RedirectRefillPerSec   float64
 	CORSOrigins            []string

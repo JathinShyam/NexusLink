@@ -1,5 +1,7 @@
 # NexusLink
 
+[![CI](https://github.com/JathinShyam/NexusLink/actions/workflows/ci.yml/badge.svg)](https://github.com/JathinShyam/NexusLink/actions/workflows/ci.yml)
+
 A production-oriented, scalable URL shortener designed for deep learning in distributed systems, data pipelines, and performance engineering. NexusLink targets SDE-2-level depth: horizontal scalability, sub-100ms redirect latency (p99), observability, and a real analytics pipeline—not a CRUD demo.
 
 This document is the **single source of truth** for architecture, trade-offs, phased delivery, and benchmarks. Refer to it when implementing features, writing ADRs, or preparing interviews.
@@ -660,15 +662,17 @@ Total estimate: **2–3 months part-time**. Do not skip measurement between phas
 
 ---
 
-## Project Structure (Planned)
+## Project Structure
 
 ```
 NexusLink/
 ├── README.md                 # This file
 ├── docs/
+│   ├── README.md             # Documentation index
 │   ├── adr/                  # Architecture Decision Records
-│   ├── architecture/         # Diagrams (Excalidraw exports)
-│   └── benchmarks/           # Load test results, graphs
+│   ├── architecture/         # Architecture notes (diagrams in README)
+│   ├── benchmarks/           # Load test results, graphs
+│   └── runbook.md            # Operations runbook
 ├── cmd/
 │   ├── api/                  # Shorten + management API
 │   ├── redirect/             # Redirect-only service (optional split)
@@ -696,8 +700,15 @@ NexusLink/
 │   ├── migrate.sh
 │   └── loadtest/
 ├── migrations/               # SQL migrations
-└── .github/workflows/
+└── .github/workflows/        # CI (ci.yml)
 ```
+
+> **Implemented today:** `cmd/api`, `cmd/gentoken`, `internal/*` (Phases 1–3),
+> `web/`, `docs/`, `deploy/` (Compose + Dockerfiles), `migrations/`, `scripts/`,
+> and `.github/workflows/`.
+> **Still planned:** `cmd/redirect`, `cmd/consumer`, `internal/analytics`,
+> `api/openapi.yaml`, `proto/`, `deploy/k8s`, `deploy/terraform`, and
+> `scripts/loadtest/`.
 
 ---
 
@@ -802,14 +813,24 @@ The pipeline lives in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and
 
 ## Documentation & Showcase
 
-### ADR topics to write (`docs/adr/`)
+### Documentation (`docs/`)
 
-1. Snowflake vs UUID vs DB sequence
-2. Hash sharding vs range sharding
-3. ClickHouse vs Postgres for analytics
-4. Rate limit algorithm choice
-5. Fail-open vs fail-closed on Redis outage
-6. 302 vs 301 default for redirects
+- [Documentation index](docs/README.md)
+- [Architecture Decision Records](docs/adr/README.md) — the "why" behind major choices
+- [Architecture notes](docs/architecture/README.md) — component and request-flow diagrams
+- [Runbook](docs/runbook.md) — local dev, operations, failure modes
+- [Benchmarks](docs/benchmarks/README.md) — methodology and results (Phase 4+)
+
+### ADRs (`docs/adr/`)
+
+| # | Decision | Status |
+|---|----------|--------|
+| [0001](docs/adr/0001-snowflake-vs-uuid-vs-db-sequence.md) | Snowflake vs UUID vs DB sequence | Accepted |
+| [0002](docs/adr/0002-hash-sharding-vs-range-sharding.md) | Hash sharding vs range sharding | Proposed |
+| [0003](docs/adr/0003-clickhouse-vs-postgres-for-analytics.md) | ClickHouse vs Postgres for analytics | Proposed |
+| [0004](docs/adr/0004-rate-limiting-algorithms.md) | Rate limit algorithm choice | Accepted |
+| [0005](docs/adr/0005-fail-open-vs-fail-closed-on-redis-outage.md) | Fail-open vs fail-closed on Redis outage | Accepted |
+| [0006](docs/adr/0006-302-vs-301-default-redirect.md) | 302 vs 301 default for redirects | Accepted |
 
 ### README maintenance
 

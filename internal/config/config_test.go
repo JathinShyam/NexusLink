@@ -62,3 +62,75 @@ func TestGetEnvFallback(t *testing.T) {
 		t.Errorf("getEnv() = %q, want fallback", got)
 	}
 }
+
+func TestLoadAnalyticsDefaults(t *testing.T) {
+	t.Setenv("ANALYTICS_ENABLED", "")
+	t.Setenv("ANALYTICS_SINK", "")
+	t.Setenv("ANALYTICS_BUFFER_SIZE", "")
+	t.Setenv("KAFKA_BROKERS", "")
+	t.Setenv("KAFKA_TOPIC", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.AnalyticsEnabled {
+		t.Error("AnalyticsEnabled = true, want false")
+	}
+	if cfg.AnalyticsSink != "log" {
+		t.Errorf("AnalyticsSink = %q, want log", cfg.AnalyticsSink)
+	}
+	if cfg.AnalyticsBufferSize != 1024 {
+		t.Errorf("AnalyticsBufferSize = %d, want 1024", cfg.AnalyticsBufferSize)
+	}
+	if cfg.KafkaTopic != "url_clicks" {
+		t.Errorf("KafkaTopic = %q, want url_clicks", cfg.KafkaTopic)
+	}
+	if len(cfg.KafkaBrokers) != 0 {
+		t.Errorf("KafkaBrokers = %v, want empty", cfg.KafkaBrokers)
+	}
+}
+
+func TestLoadKafkaSink(t *testing.T) {
+	t.Setenv("ANALYTICS_ENABLED", "true")
+	t.Setenv("ANALYTICS_SINK", "kafka")
+	t.Setenv("KAFKA_BROKERS", "localhost:9092, localhost:9093")
+	t.Setenv("KAFKA_TOPIC", "clicks")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if !cfg.AnalyticsEnabled {
+		t.Error("AnalyticsEnabled = false, want true")
+	}
+	if cfg.AnalyticsSink != "kafka" {
+		t.Errorf("AnalyticsSink = %q, want kafka", cfg.AnalyticsSink)
+	}
+	if len(cfg.KafkaBrokers) != 2 {
+		t.Errorf("KafkaBrokers = %v, want 2 brokers", cfg.KafkaBrokers)
+	}
+	if cfg.KafkaTopic != "clicks" {
+		t.Errorf("KafkaTopic = %q, want clicks", cfg.KafkaTopic)
+	}
+}
+
+func TestLoadKafkaSinkRequiresBrokers(t *testing.T) {
+	t.Setenv("ANALYTICS_ENABLED", "true")
+	t.Setenv("ANALYTICS_SINK", "kafka")
+	t.Setenv("KAFKA_BROKERS", "")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected error when ANALYTICS_SINK=kafka without KAFKA_BROKERS")
+	}
+}
+
+func TestLoadInvalidAnalyticsSink(t *testing.T) {
+	t.Setenv("ANALYTICS_SINK", "s3")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected error for invalid ANALYTICS_SINK")
+	}
+}

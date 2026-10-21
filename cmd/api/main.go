@@ -92,9 +92,12 @@ func main() {
 	jwtService := auth.NewJWT(cfg.JWTSecret, cfg.JWTTTL)
 
 	runCtx, stopRun := context.WithCancel(context.Background())
-	defer stopRun()
 
-	publisher := newAnalyticsPublisher(runCtx, log, m, cfg)
+	publisher, closePublisher := newAnalyticsPublisher(runCtx, log, m, cfg)
+	defer func() {
+		stopRun()
+		closePublisher()
+	}()
 
 	shortenLimiter := ratelimit.NewFixedWindowLimiter(
 		redisClient, "rl:shorten", cfg.ShortenRateLimit, cfg.ShortenRateWindow,
@@ -156,17 +159,42 @@ func cacheForRedis(ctx context.Context, log *slog.Logger, client *redis.Client) 
 // newAnalyticsPublisher builds the click-event publisher. Analytics is
 // fail-open: when disabled it is a no-op, and the async publisher never blocks
 // the redirect path.
-func newAnalyticsPublisher(ctx context.Context, log *slog.Logger, m *metrics.Metrics, cfg *config.Config) analytics.Publisher {
+func newAnalyticsPublisher(ctx context.Context, log *slog.Logger, m *metrics.Metrics, cfg *config.Config) (analytics.Publisher, func()) {
 	if !cfg.AnalyticsEnabled {
 		log.Info("analytics disabled")
-		return analytics.NoopPublisher{}
+		return analytics.NoopPublisher{}, func() {}
 	}
 
-	pub := analytics.NewAsyncPublisher(analytics.NewLogSink(log), cfg.AnalyticsBufferSize, log, m)
+	var sink analytics.Sink
+	if cfg.AnalyticsSink == "kafka" {
+		kafkaSink, err := analytics.NewKafkaSink(cfg.KafkaBrokers, cfg.KafkaTopic)
+		if err != nil {
+			log.Error("kafka sink init failed; analytics disabled", "error", err)
+			return analytics.NoopPublisher{}, func() {}
+		}
+
+		pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		if err := kafkaSink.Ping(pingCtx); err != nil {
+			// Keep the sink: production retries per event, and redirects never block.
+			log.Warn("kafka unreachable at startup; click events will retry", "error", err)
+		} else {
+			log.Info("kafka sink connected", "brokers", cfg.KafkaBrokers, "topic", cfg.KafkaTopic)
+		}
+		cancel()
+
+		sink = kafkaSink
+	} else {
+		sink = analytics.NewLogSink(log)
+	}
+
+	pub := analytics.NewAsyncPublisher(sink, cfg.AnalyticsBufferSize, log, m)
 	go pub.Run(ctx)
 
-	log.Info("analytics enabled", "sink", "log", "buffer_size", cfg.AnalyticsBufferSize)
-	return pub
+	log.Info("analytics enabled",
+		"sink", cfg.AnalyticsSink,
+		"buffer_size", cfg.AnalyticsBufferSize,
+	)
+	return pub, func() { _ = pub.Close() }
 }
 
 func readyCheck(pool *pgxpool.Pool, redisClient *redis.Client) server.ReadyChecker {

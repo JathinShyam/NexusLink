@@ -60,15 +60,31 @@ Redis `:6379`.
 Click events are captured on the redirect path but **disabled by default**.
 
 ```bash
-ANALYTICS_ENABLED=true make run     # or set it in .env / compose
+# Log sink — quickest way to see events
+ANALYTICS_ENABLED=true make run
 curl -s -o /dev/null "http://localhost:8080/<short_code>"
 grep "click event" logs/api/app.log
 ```
 
-Today the default sink is `LogSink` (events appear in the structured log). The
-Kafka sink, consumer, and ClickHouse store are the next increment; until then
-`click_events_dropped_total` rising means the buffer filled because the sink is
-too slow.
+For Kafka, start the opt-in Redpanda profile and enable the Kafka sink:
+
+```bash
+ANALYTICS_ENABLED=true ANALYTICS_SINK=kafka KAFKA_BROKERS=redpanda:29092 \
+  docker compose -f deploy/docker-compose.yml --profile analytics up -d
+
+# Click a link, then inspect the topic (JSON keyed by short code):
+docker compose -f deploy/docker-compose.yml exec redpanda \
+  rpk topic consume url_clicks --offset start --num 1
+```
+
+The `redpanda-init` job creates `url_clicks` with 3 partitions; the producer
+will also auto-create it when pointed at an external broker. `click_events_*`
+metrics tell you if the sink is keeping up:
+
+- `click_events_dropped_total` rising ⇒ buffer full (sink too slow / broker down)
+- `click_events_errors_total` rising ⇒ produce failures (redirects still 302)
+
+The consumer → ClickHouse store is the next increment.
 
 ## Migrations
 

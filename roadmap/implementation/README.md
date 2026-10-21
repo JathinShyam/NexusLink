@@ -12,7 +12,7 @@ We follow the **roadmap folder** numbering (not the README's older "Implementati
 | Phase 2 | [phase-02-mvp-shortener.md](./phase-02-mvp-shortener.md) | README Phase 1 — MVP | Complete — commit `cf3cfad` |
 | Phase 3 | [phase-03-scale-core.md](./phase-03-scale-core.md) | README Phase 2 — Scale Core | Complete |
 | Frontend UI | [phase-frontend-ui.md](./phase-frontend-ui.md) | (between Phase 3 and 4) | Complete |
-| Phase 4 | — | README Phase 3 — Analytics | In progress — ingestion seam (`internal/analytics`) |
+| Phase 4 | — | README Phase 3 — Analytics | In progress — ingestion seam + Kafka sink |
 | Phase 5+ | — | README Phase 4+ | Not started |
 
 ## How to use these docs

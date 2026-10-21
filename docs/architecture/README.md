@@ -60,8 +60,9 @@ the event to an `analytics.Publisher`, which is non-blocking and fail-open:
 flowchart LR
     RED[redirect.Handler] -->|Publish, never blocks| AP["analytics.AsyncPublisher<br/>(bounded channel)"]
     AP -->|Send| Sink{{Sink}}
-    Sink -->|default today| Log[LogSink]
-    Sink -.->|Phase 4| Kafka[(Kafka: url_clicks)]
+    Sink --> Log[LogSink]
+    Sink --> K[KafkaSink]
+    K -->|JSON, key = short_code| Kafka[(Redpanda / Kafka<br/>url_clicks, 3 partitions)]
     AP -.->|buffer full| Drop[drop + click_events_dropped_total]
 ```
 
@@ -69,12 +70,16 @@ flowchart LR
   and a `request_id` (inbound `X-Request-Id` or generated) for future dedupe.
 - `AsyncPublisher` enqueues onto a bounded channel and **never blocks**; when the
   buffer is full it drops and increments `click_events_dropped_total`.
-- `Sink` is the pluggable delivery point (`LogSink` today; a Kafka sink next).
+- `Sink` is the pluggable delivery point: `LogSink` for local development,
+  `KafkaSink` (franz-go) for the pipeline. Kafka records are keyed by short code
+  so all clicks for one link share a partition; the producer is idempotent and
+  waits for all in-sync replicas.
 - Disabled by default (`ANALYTICS_ENABLED=false`), so behaviour is unchanged
-  unless opted in.
+  unless opted in. Delivery is at-least-once; `request_id` is the dedupe key for
+  the future consumer.
 
-Still to come: a Kafka `Sink`, `cmd/consumer` → ClickHouse, the analytics API,
-and the dashboard.
+Still to come: `cmd/consumer` → ClickHouse, the analytics API, and the
+dashboard.
 
 ## Redirect path (read-through cache)
 

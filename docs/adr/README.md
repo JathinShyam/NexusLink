@@ -14,6 +14,7 @@ decision, add a new ADR that **Supersedes** the old one rather than editing it.
 | [0004](./0004-rate-limiting-algorithms.md) | Rate limiting algorithms and per-endpoint choice | Accepted |
 | [0005](./0005-fail-open-vs-fail-closed-on-redis-outage.md) | Fail-open vs fail-closed when Redis is unavailable | Accepted |
 | [0006](./0006-302-vs-301-default-redirect.md) | Default redirect status: 302 vs 301 | Accepted |
+| [0007](./0007-async-fail-open-click-ingestion.md) | Async fail-open click ingestion, at-least-once delivery | Accepted |
 
 ## Status legend
 

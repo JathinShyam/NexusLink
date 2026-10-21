@@ -28,7 +28,10 @@ type Config struct {
 	RedirectRefillPerSec   float64
 	CORSOrigins            []string
 	AnalyticsEnabled       bool
+	AnalyticsSink          string
 	AnalyticsBufferSize    int
+	KafkaBrokers           []string
+	KafkaTopic             string
 }
 
 func Load() (*Config, error) {
@@ -79,6 +82,18 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid ANALYTICS_BUFFER_SIZE: %w", err)
 	}
 
+	analyticsSink := strings.ToLower(getEnv("ANALYTICS_SINK", "log"))
+	switch analyticsSink {
+	case "log", "kafka":
+	default:
+		return nil, fmt.Errorf("invalid ANALYTICS_SINK: %q (want log or kafka)", analyticsSink)
+	}
+
+	kafkaBrokers := parseCSV(getEnv("KAFKA_BROKERS", ""))
+	if analyticsEnabled && analyticsSink == "kafka" && len(kafkaBrokers) == 0 {
+		return nil, fmt.Errorf("ANALYTICS_SINK=kafka requires KAFKA_BROKERS")
+	}
+
 	cfg := &Config{
 		Env:                    getEnv("ENV", "development"),
 		Port:                   port,
@@ -97,7 +112,10 @@ func Load() (*Config, error) {
 		RedirectRefillPerSec:   refillRate,
 		CORSOrigins:            parseCSV(getEnv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")),
 		AnalyticsEnabled:       analyticsEnabled,
+		AnalyticsSink:          analyticsSink,
 		AnalyticsBufferSize:    analyticsBufferSize,
+		KafkaBrokers:           kafkaBrokers,
+		KafkaTopic:             getEnv("KAFKA_TOPIC", "url_clicks"),
 	}
 
 	return cfg, nil

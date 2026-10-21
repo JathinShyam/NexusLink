@@ -549,7 +549,7 @@ Total estimate: **2–3 months part-time**. Do not skip measurement between phas
 
 ### Phase 3 — Analytics Pipeline (2 weeks)
 
-- [ ] Kafka producer on redirect (non-blocking)
+- [x] Kafka producer on redirect (non-blocking)
 - [ ] Consumer → ClickHouse batch inserts
 - [ ] Analytics API backed by ClickHouse queries
 - [ ] Optional: GeoIP in consumer
@@ -720,11 +720,12 @@ NexusLink/
 
 ## Local Development
 
-> **Status:** Phase 3 scale core + React frontend UI.
+> **Status:** Phase 3 scale core + React frontend UI + Phase 4 analytics
+> ingestion (Kafka producer live; consumer/API/dashboard next).
 
 ### Prerequisites
 
-- Go 1.22+
+- Go 1.25+
 - Docker & Docker Compose
 - Node.js 20+ (for the frontend)
 - `make` (optional)
@@ -783,6 +784,32 @@ curl -X POST http://localhost:8080/api/v1/shorten \
 curl -I http://localhost:8080/<short_code>
 ```
 
+### Click analytics (Phase 4, in progress)
+
+The redirect path publishes click events **without blocking**. Analytics is off
+by default; enable the log sink to see events in `logs/api/app.log`:
+
+```bash
+ANALYTICS_ENABLED=true make run
+grep "click event" logs/api/app.log
+```
+
+For the real pipeline, start the opt-in Redpanda broker (Kafka-compatible) and
+point the API at it:
+
+```bash
+ANALYTICS_ENABLED=true ANALYTICS_SINK=kafka KAFKA_BROKERS=redpanda:29092 \
+  docker compose -f deploy/docker-compose.yml --profile analytics up -d
+
+# Click a short link, then read the event from the topic:
+docker compose -f deploy/docker-compose.yml exec redpanda \
+  rpk topic consume url_clicks --offset start --num 1
+```
+
+`rpk topic list` should show `url_clicks` (3 partitions). Events are JSON keyed
+by short code, so clicks for one link stay ordered. The consumer → ClickHouse
+store and `/api/v1/analytics/{short_code}` are the next increment.
+
 ### Environment variables
 
 | Variable | Description |
@@ -793,8 +820,10 @@ curl -I http://localhost:8080/<short_code>
 | `SNOWFLAKE_MACHINE_ID` | 0–1023 per instance |
 | `CORS_ORIGINS` | Comma-separated allowed frontend origins |
 | `ANALYTICS_ENABLED` | Publish click events on redirect (default `false`) |
+| `ANALYTICS_SINK` | Delivery sink: `log` (default) or `kafka` |
 | `ANALYTICS_BUFFER_SIZE` | Non-blocking event buffer size before dropping (default `1024`) |
-| `KAFKA_BROKERS` | Comma-separated brokers (Phase 4) |
+| `KAFKA_BROKERS` | Comma-separated brokers (required when `ANALYTICS_SINK=kafka`) |
+| `KAFKA_TOPIC` | Click-event topic (default `url_clicks`) |
 | `CLICKHOUSE_URL` | HTTP/native ClickHouse URL (Phase 4) |
 | `VITE_API_BASE_URL` | Optional absolute API base for the SPA |
 

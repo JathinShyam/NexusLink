@@ -46,6 +46,56 @@ services:
       timeout: 3s
       retries: 5
 
+  # Opt-in Kafka-compatible broker for the click pipeline:
+  #   docker compose --profile analytics up -d
+  redpanda:
+    image: redpandadata/redpanda:v26.2.5
+    container_name: nexuslink-redpanda
+    profiles: ["analytics"]
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --set
+      - redpanda.auto_create_topics_enabled=true
+    ports:
+      - "9092:9092"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Creates the click topic once the broker is healthy (idempotent).
+  redpanda-init:
+    image: redpandadata/redpanda:v26.2.5
+    container_name: nexuslink-redpanda-init
+    profiles: ["analytics"]
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        rpk topic create ${KAFKA_TOPIC:-url_clicks} --brokers redpanda:29092
+        --partitions 3 --replicas 1 || echo "topic already exists"
+    restart: "no"
+
   migrate:
     image: migrate/migrate:v4.17.1
     container_name: nexuslink-migrate
@@ -86,6 +136,13 @@ services:
       JWT_SECRET: dev-secret-change-me
       SNOWFLAKE_MACHINE_ID: 1
       CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000
+      # Analytics is off by default; enable with the "analytics" profile plus:
+      #   ANALYTICS_ENABLED=true ANALYTICS_SINK=kafka KAFKA_BROKERS=redpanda:29092
+      ANALYTICS_ENABLED: ${ANALYTICS_ENABLED:-false}
+      ANALYTICS_SINK: ${ANALYTICS_SINK:-log}
+      ANALYTICS_BUFFER_SIZE: ${ANALYTICS_BUFFER_SIZE:-1024}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-url_clicks}
     ports:
       - "8080:8080"
     volumes:
@@ -104,3 +161,4 @@ services:
 
 volumes:
   postgres_data:
+  redpanda_data:

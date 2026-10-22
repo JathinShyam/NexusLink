@@ -66,25 +66,42 @@ curl -s -o /dev/null "http://localhost:8080/<short_code>"
 grep "click event" logs/api/app.log
 ```
 
-For Kafka, start the opt-in Redpanda profile and enable the Kafka sink:
+Full pipeline (Redpanda → consumer → ClickHouse):
 
 ```bash
 ANALYTICS_ENABLED=true ANALYTICS_SINK=kafka KAFKA_BROKERS=redpanda:29092 \
   docker compose -f deploy/docker-compose.yml --profile analytics up -d
+# or: make analytics-up
 
-# Click a link, then inspect the topic (JSON keyed by short code):
-docker compose -f deploy/docker-compose.yml exec redpanda \
-  rpk topic consume url_clicks --offset start --num 1
+# Click a link, then read the warehouse (batch flush is ~2s):
+docker compose -f deploy/docker-compose.yml exec clickhouse \
+  clickhouse-client --user nexuslink --password nexuslink \
+  --query "SELECT short_code, count() FROM nexuslink.clicks GROUP BY short_code"
+
+docker compose -f deploy/docker-compose.yml logs consumer | tail
 ```
 
 The `redpanda-init` job creates `url_clicks` with 3 partitions; the producer
-will also auto-create it when pointed at an external broker. `click_events_*`
-metrics tell you if the sink is keeping up:
+will also auto-create it when pointed at an external broker.
 
-- `click_events_dropped_total` rising ⇒ buffer full (sink too slow / broker down)
-- `click_events_errors_total` rising ⇒ produce failures (redirects still 302)
+**Delivery semantics.** The consumer commits offsets only after a successful
+ClickHouse insert (at-least-once). If ClickHouse is unavailable it retries with
+backoff and stops consuming, so Kafka retains the backlog instead of losing
+events. Duplicates are expected after a crash; `nexuslink.clicks` is a
+`ReplacingMergeTree` ordered by `(short_code, clicked_at, request_id)`, so query
+with `FINAL` (or `uniqExact(request_id)`) for deduplicated counts.
 
-The consumer → ClickHouse store is the next increment.
+**Health.** The consumer serves `/health` and `/ready` on `:8081`
+(`CONSUMER_HEALTH_PORT`); `/ready` pings both ClickHouse and Kafka.
+
+**Troubleshooting.**
+
+- No rows in `nexuslink.clicks` ⇒ check `docker compose logs consumer` for
+  `clickhouse insert failed` (credentials/schema) or `kafka fetch error`.
+- `click_events_dropped_total` rising on the API ⇒ the async buffer filled
+  because the sink is too slow or the broker is down; redirects still return 302.
+- Duplicate rows ⇒ expected under at-least-once; use `FINAL` or dedupe on
+  `request_id` in queries.
 
 ## Migrations
 

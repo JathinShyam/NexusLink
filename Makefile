@@ -1,4 +1,4 @@
-.PHONY: run build test docker-up docker-down migrate-up migrate-down health ready demo demo-phase3 e2e gentoken
+.PHONY: run build build-consumer run-consumer test docker-up docker-down analytics-up analytics-down migrate-up migrate-down health ready demo demo-phase3 e2e gentoken
 .PHONY: web-install web-dev web-build
 .PHONY: logs logs-api logs-postgres logs-migrate logs-all
 .PHONY: logs-tail logs-tail-api logs-tail-postgres logs-tail-migrate logs-tail-all docker-logs-web
@@ -8,6 +8,20 @@ run:
 
 build:
 	go build -o bin/api ./cmd/api
+
+build-consumer:
+	go build -o bin/consumer ./cmd/consumer
+
+run-consumer:
+	go run ./cmd/consumer
+
+analytics-up:
+	ANALYTICS_ENABLED=true ANALYTICS_SINK=kafka KAFKA_BROKERS=redpanda:29092 \
+		docker compose -f deploy/docker-compose.yml --profile analytics up -d --build \
+		postgres redis migrate api redpanda redpanda-init clickhouse consumer
+
+analytics-down:
+	docker compose -f deploy/docker-compose.yml --profile analytics down
 
 test:
 	go test ./...

@@ -550,7 +550,7 @@ Total estimate: **2–3 months part-time**. Do not skip measurement between phas
 ### Phase 3 — Analytics Pipeline (2 weeks)
 
 - [x] Kafka producer on redirect (non-blocking)
-- [ ] Consumer → ClickHouse batch inserts
+- [x] Consumer → ClickHouse batch inserts
 - [ ] Analytics API backed by ClickHouse queries
 - [ ] Optional: GeoIP in consumer
 - [ ] React dashboard: charts for clicks over time
@@ -708,20 +708,20 @@ NexusLink/
 └── .github/workflows/        # CI (ci.yml)
 ```
 
-> **Implemented today:** `cmd/api`, `cmd/gentoken`, `internal/*` (Phases 1–3 plus
-> the Phase 4 analytics ingestion seam), `web/`, `docs/`, `api/openapi.yaml`,
-> `deploy/` (Compose + Dockerfiles), `migrations/`, `scripts/`, and `.github/`
-> (CI + PR/issue templates).
-> **Still planned:** `cmd/consumer`, the Kafka sink + ClickHouse store, the
-> analytics API, `cmd/redirect`, `proto/`, `deploy/k8s`, `deploy/terraform`, and
-> `scripts/loadtest/`.
+> **Implemented today:** `cmd/api`, `cmd/consumer`, `cmd/gentoken`,
+> `internal/*` (Phases 1–3 plus the Phase 4 Kafka producer and ClickHouse
+> consumer), `web/`, `docs/`, `api/openapi.yaml`, `deploy/` (Compose +
+> Dockerfiles), `migrations/`, `scripts/`, and `.github/` (CI + PR/issue
+> templates).
+> **Still planned:** the analytics API + dashboard, `cmd/redirect`, `proto/`,
+> `deploy/k8s`, `deploy/terraform`, and `scripts/loadtest/`.
 
 ---
 
 ## Local Development
 
 > **Status:** Phase 3 scale core + React frontend UI + Phase 4 analytics
-> ingestion (Kafka producer live; consumer/API/dashboard next).
+> ingestion and ClickHouse consumer (API + dashboard next).
 
 ### Prerequisites
 
@@ -807,8 +807,25 @@ docker compose -f deploy/docker-compose.yml exec redpanda \
 ```
 
 `rpk topic list` should show `url_clicks` (3 partitions). Events are JSON keyed
-by short code, so clicks for one link stay ordered. The consumer → ClickHouse
-store and `/api/v1/analytics/{short_code}` are the next increment.
+by short code, so clicks for one link stay ordered.
+
+The consumer (same `analytics` profile) batches events into ClickHouse. Verify a
+click end-to-end:
+
+```bash
+# Click a link, then wait ~2s for the batch flush:
+docker compose -f deploy/docker-compose.yml exec clickhouse \
+  clickhouse-client --user nexuslink --password nexuslink \
+  --query "SELECT short_code, count() FROM nexuslink.clicks GROUP BY short_code"
+
+# Consumer logs (startup, flushed batches, retries):
+docker compose -f deploy/docker-compose.yml logs consumer | tail
+```
+
+The consumer commits Kafka offsets **only after** a successful insert
+(at-least-once). `nexuslink.clicks` is a `ReplacingMergeTree` ordered by
+`(short_code, clicked_at, request_id)`, so duplicate deliveries collapse under
+`FINAL` (or `uniqExact(request_id)`). The analytics API and dashboard are next.
 
 ### Environment variables
 
@@ -824,7 +841,13 @@ store and `/api/v1/analytics/{short_code}` are the next increment.
 | `ANALYTICS_BUFFER_SIZE` | Non-blocking event buffer size before dropping (default `1024`) |
 | `KAFKA_BROKERS` | Comma-separated brokers (required when `ANALYTICS_SINK=kafka`) |
 | `KAFKA_TOPIC` | Click-event topic (default `url_clicks`) |
-| `CLICKHOUSE_URL` | HTTP/native ClickHouse URL (Phase 4) |
+| `CLICKHOUSE_URL` | ClickHouse HTTP endpoint (default `http://localhost:8123`) |
+| `CLICKHOUSE_DATABASE` | ClickHouse database (default `nexuslink`) |
+| `CLICKHOUSE_USER` / `CLICKHOUSE_PASSWORD` | ClickHouse credentials |
+| `KAFKA_GROUP_ID` | Consumer group id (default `nexuslink-analytics`) |
+| `CONSUMER_BATCH_SIZE` | Events per insert batch (default `500`) |
+| `CONSUMER_FLUSH_INTERVAL_MS` | Max time before flushing a partial batch (default `2000`) |
+| `CONSUMER_HEALTH_PORT` | Consumer health/readiness port (default `8081`) |
 | `VITE_API_BASE_URL` | Optional absolute API base for the SPA |
 
 ---

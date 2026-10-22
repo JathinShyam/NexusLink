@@ -96,6 +96,61 @@ services:
         --partitions 3 --replicas 1 || echo "topic already exists"
     restart: "no"
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.9.24.8-alpine
+    container_name: nexuslink-clickhouse
+    profiles: ["analytics"]
+    environment:
+      CLICKHOUSE_DB: nexuslink
+      CLICKHOUSE_USER: nexuslink
+      CLICKHOUSE_PASSWORD: nexuslink
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --query 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Kafka -> ClickHouse batch writer. Same image as the API.
+  consumer:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: nexuslink-consumer
+    profiles: ["analytics"]
+    depends_on:
+      redpanda-init:
+        condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
+    environment:
+      ENV: development
+      LOG_LEVEL: info
+      LOG_DIR: /app/logs
+      LOG_FILE: consumer.log
+      KAFKA_BROKERS: redpanda:29092
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-url_clicks}
+      KAFKA_GROUP_ID: nexuslink-analytics
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_DATABASE: nexuslink
+      CLICKHOUSE_USER: nexuslink
+      CLICKHOUSE_PASSWORD: nexuslink
+      CONSUMER_BATCH_SIZE: ${CONSUMER_BATCH_SIZE:-500}
+      CONSUMER_FLUSH_INTERVAL_MS: ${CONSUMER_FLUSH_INTERVAL_MS:-2000}
+    command: ["/app/consumer"]
+    volumes:
+      - ../logs/consumer:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   migrate:
     image: migrate/migrate:v4.17.1
     container_name: nexuslink-migrate
@@ -162,3 +217,4 @@ services:
 volumes:
   postgres_data:
   redpanda_data:
+  clickhouse_data:

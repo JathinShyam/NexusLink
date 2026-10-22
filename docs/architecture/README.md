@@ -47,9 +47,9 @@ flowchart TB
 ```
 
 Solid rectangles are implemented today. The Kafka → consumer → ClickHouse path
-from the README is not wired yet: Phase 4 currently ships only the **ingestion
-seam** on the redirect path (see below), with the default sink writing click
-events to the structured log.
+is wired end-to-end (see below); the analytics API and dashboard are not built
+yet. The default sink still writes click events to the structured log, so the
+whole pipeline is opt-in.
 
 ## Click-event ingestion (Phase 4, in progress)
 
@@ -63,6 +63,8 @@ flowchart LR
     Sink --> Log[LogSink]
     Sink --> K[KafkaSink]
     K -->|JSON, key = short_code| Kafka[(Redpanda / Kafka<br/>url_clicks, 3 partitions)]
+    Kafka --> C["cmd/consumer<br/>(group nexuslink-analytics)"]
+    C -->|JSONEachRow batches| CH[(ClickHouse<br/>nexuslink.clicks)]
     AP -.->|buffer full| Drop[drop + click_events_dropped_total]
 ```
 
@@ -75,11 +77,18 @@ flowchart LR
   so all clicks for one link share a partition; the producer is idempotent and
   waits for all in-sync replicas.
 - Disabled by default (`ANALYTICS_ENABLED=false`), so behaviour is unchanged
-  unless opted in. Delivery is at-least-once; `request_id` is the dedupe key for
-  the future consumer.
+  unless opted in. Delivery is at-least-once; `request_id` is the dedupe key.
 
-Still to come: `cmd/consumer` → ClickHouse, the analytics API, and the
-dashboard.
+`cmd/consumer` reads the topic in a consumer group, batches up to
+`CONSUMER_BATCH_SIZE` events (or `CONSUMER_FLUSH_INTERVAL_MS`), inserts them via
+the ClickHouse HTTP interface, and commits offsets **after** a successful
+insert. When ClickHouse is down it retries with backoff instead of dropping
+records, so Kafka retains the backlog. `nexuslink.clicks` is a
+`ReplacingMergeTree(inserted_at)` ordered by
+`(short_code, clicked_at, request_id)`, which makes duplicate deliveries
+idempotent under `FINAL`.
+
+Still to come: the analytics API and the dashboard.
 
 ## Redirect path (read-through cache)
 

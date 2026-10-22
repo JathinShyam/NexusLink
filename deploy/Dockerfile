@@ -8,7 +8,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -o /bin/api ./cmd/api
+RUN CGO_ENABLED=0 go build -o /bin/api ./cmd/api && \
+    CGO_ENABLED=0 go build -o /bin/consumer ./cmd/consumer
 
 FROM alpine:3.20
 
@@ -16,6 +17,7 @@ RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 COPY --from=builder /bin/api /app/api
+COPY --from=builder /bin/consumer /app/consumer
 
 EXPOSE 8080
 

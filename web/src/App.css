@@ -25,6 +25,7 @@
   grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
   padding-top: clamp(2rem, 4vh, 3.5rem);
   padding-bottom: clamp(2.5rem, 5vh, 4rem);
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
 }
 
 .desk__intro {
@@ -40,11 +41,22 @@
   flex-direction: column;
   min-width: 0;
   padding-left: clamp(2rem, 5vw, 5rem);
-  border-left: 1px solid var(--line);
 }
 
-/* The route line begins with one node at the top of the work column. */
+/* The route line draws itself, then one node locks into the top of it. */
 .desk__work::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: var(--line);
+  transform-origin: top center;
+  animation: draw-y 280ms var(--ease-out) 60ms both;
+}
+
+.desk__work::after {
   content: "";
   position: absolute;
   top: 0.4375rem;
@@ -53,6 +65,7 @@
   height: 6px;
   border-radius: 999px;
   background: var(--accent);
+  animation: node-pop 220ms var(--ease-back) 260ms both;
 }
 
 .intro__title {
@@ -84,6 +97,11 @@
   min-width: 0;
 }
 
+/* The composer clears the desk before the ticket is issued. */
+.stage[data-state="leaving"] {
+  animation: fade-out var(--dur-fast) var(--ease-in-out) both;
+}
+
 /* Facts sit under the work, not under the headline. */
 .facts {
   display: grid;
@@ -91,6 +109,7 @@
   margin: clamp(2rem, 4vh, 2.75rem) 0 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  animation: fade-in var(--dur-base) var(--ease-out) 180ms both;
 }
 
 .facts__item {
@@ -132,10 +151,10 @@
   .desk__work {
     margin-top: clamp(2.25rem, 5vh, 3rem);
     padding-left: 0;
-    border-left: 0;
   }
 
-  .desk__work::before {
+  .desk__work::before,
+  .desk__work::after {
     display: none;
   }
 

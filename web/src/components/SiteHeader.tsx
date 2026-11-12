@@ -16,7 +16,7 @@ import "./SiteHeader.css";
 
 type Props = {
   theme: Theme;
-  onToggleTheme: () => void;
+  onToggleTheme: (origin?: { x: number; y: number }) => void;
 };
 
 function accountName(displayName: string, email: string): string {
@@ -183,7 +183,13 @@ export function SiteHeader({ theme, onToggleTheme }: Props) {
           <button
             className="site-header__theme"
             type="button"
-            onClick={onToggleTheme}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              onToggleTheme({
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+              });
+            }}
             aria-label={`Switch to ${nextTheme} theme`}
             title={`Switch to ${nextTheme} theme`}
           >

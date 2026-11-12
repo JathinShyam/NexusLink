@@ -1,0 +1,162 @@
+/*
+ * Motion sheet.
+ *
+ * Every animation in the product comes from this file, so the whole app
+ * shares one vocabulary: content rises, lines draw, nodes lock in.
+ * Only transform, opacity and clip-path move, so the work stays on the
+ * compositor. Distances come from tokens, so reduced motion collapses the
+ * travel and keeps the fades.
+ */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-rise));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rise-in-lg {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-rise-lg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--motion-rise) * -0.5));
+  }
+}
+
+/* A rule that grows from its origin, like a pen stroke. */
+@keyframes draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* A route node arriving on the line. Small markers may start smaller than
+   large surfaces, but nothing ever starts at zero. */
+@keyframes node-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* A glyph snapping into place. */
+@keyframes icon-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* A single outward pulse, used to confirm an action. */
+@keyframes ring-pulse {
+  from {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+/* The brand mark draws its route. */
+@keyframes stroke-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Theme swap: the new palette opens like a circle from the toggle. */
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 0%));
+  }
+  to {
+    clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 0%));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No travel, no drawing, no pulses — only short fades remain. */
+  .desk,
+  .facts,
+  .recent__item,
+  .recent__node,
+  .result,
+  .result__code,
+  .result__host,
+  .result__meta,
+  .result__actions,
+  .brand__mark circle,
+  .desk__work::before,
+  .desk__work::after,
+  .result::before,
+  .result__tear,
+  .result__copy[data-copied="true"] .icon {
+    animation: none !important;
+  }
+
+  .brand__mark path {
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
+
+  .result__copy-ring {
+    animation: none !important;
+    opacity: 0;
+  }
+}

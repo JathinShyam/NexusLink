@@ -10,6 +10,7 @@
   width: 100%;
   padding-top: clamp(2.5rem, 7vh, 5rem);
   padding-bottom: clamp(3.5rem, 9vh, 6rem);
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
 }
 
 .auth-intro {

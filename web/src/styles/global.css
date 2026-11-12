@@ -1,5 +1,6 @@
 @import "./fonts.css";
 @import "./tokens.css";
+@import "./motion.css";
 
 *,
 *::before,
@@ -189,7 +190,7 @@ code {
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(var(--motion-press));
 }
 
 .btn:disabled {
@@ -280,8 +281,8 @@ code {
   color: var(--ink);
   font-size: 0.9375rem;
   transition:
-    border-color 160ms var(--ease),
-    box-shadow 160ms var(--ease);
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 
 .field__control:hover {
@@ -385,6 +386,7 @@ select.field__control {
   border-radius: var(--radius-sm);
   font-size: 0.8125rem;
   line-height: 1.45;
+  animation: fade-in var(--dur-base) var(--ease-out) both;
 }
 
 .form-error {
@@ -435,9 +437,29 @@ select.field__control {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* A loading indicator must keep telling the truth. */
+  .spinner {
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* Theme swap: the new palette opens from the toggle that started it. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: theme-reveal var(--dur-scene) var(--ease-in-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

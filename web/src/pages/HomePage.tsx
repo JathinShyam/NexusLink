@@ -24,8 +24,20 @@ export function HomePage() {
     () => new URLSearchParams(location.search).get("manage") === "1",
   );
   const [focusSignal, setFocusSignal] = useState(0);
+  const [resultIssued, setResultIssued] = useState(false);
 
   usePageTitle();
+
+  // The composer clears the desk first, then the ticket is issued.
+  useEffect(() => {
+    if (!result) {
+      setResultIssued(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setResultIssued(true), 140);
+    return () => window.clearTimeout(timer);
+  }, [result]);
 
   useEffect(() => {
     if (new URLSearchParams(location.search).get("manage") !== "1") {
@@ -129,8 +141,11 @@ export function HomePage() {
         </div>
 
         <div className="desk__work">
-          <div className="stage">
-            {result ? (
+          <div
+            className="stage"
+            data-state={result ? (resultIssued ? "result" : "leaving") : "form"}
+          >
+            {result && resultIssued ? (
               <ResultPanel result={result} onReset={handleReset} />
             ) : (
               <ShortenForm

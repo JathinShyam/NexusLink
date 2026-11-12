@@ -25,6 +25,7 @@ function splitShortUrl(shortUrl: string): { host: string; code: string } {
 export function ResultPanel({ result, onReset }: Props) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const [copyCount, setCopyCount] = useState(0);
   const copyButtonRef = useRef<HTMLButtonElement>(null);
   const timerRef = useRef<number | undefined>(undefined);
   const { host, code } = splitShortUrl(result.short_url);
@@ -44,6 +45,7 @@ export function ResultPanel({ result, onReset }: Props) {
     try {
       await copyText(result.short_url);
       setCopied(true);
+      setCopyCount((count) => count + 1);
       timerRef.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
@@ -85,9 +87,13 @@ export function ResultPanel({ result, onReset }: Props) {
           className="btn btn--primary result__copy"
           type="button"
           onClick={copy}
+          data-copied={copied ? "true" : undefined}
         >
           {copied ? <CheckIcon className="icon" /> : <CopyIcon className="icon" />}
           {copied ? "Copied" : "Copy link"}
+          {copied ? (
+            <span className="result__copy-ring" key={copyCount} aria-hidden="true" />
+          ) : null}
         </button>
       </div>
 
@@ -105,7 +111,9 @@ export function ResultPanel({ result, onReset }: Props) {
             : ""}
       </p>
 
-      <div className="result__perf" aria-hidden="true" />
+      <div className="result__perf" aria-hidden="true">
+        <span className="result__tear" />
+      </div>
 
       <dl className="result__meta">
         <div>

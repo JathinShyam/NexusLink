@@ -1,8 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 
 export type Theme = "light" | "dark";
 
+export type ThemeOrigin = {
+  x: number;
+  y: number;
+};
+
 const STORAGE_KEY = "nexuslink.theme";
+
+type ViewTransitionHandle = {
+  finished: Promise<void>;
+};
+
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (callback: () => void) => ViewTransitionHandle;
+};
 
 function readStoredTheme(): Theme | null {
   try {
@@ -31,6 +45,10 @@ function applyTheme(theme: Theme) {
 
   const meta = document.querySelector('meta[name="theme-color"]');
   meta?.setAttribute("content", theme === "dark" ? "#0b0c0e" : "#f2f2ed");
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }
 
 export function useTheme() {
@@ -70,17 +88,43 @@ export function useTheme() {
     };
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    setTheme((current) => {
-      const next: Theme = current === "dark" ? "light" : "dark";
-      try {
-        localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        /* ignore private mode */
+  const toggleTheme = useCallback(
+    (origin?: ThemeOrigin) => {
+      const next: Theme = theme === "dark" ? "light" : "dark";
+
+      const commit = () => {
+        applyTheme(next);
+        try {
+          localStorage.setItem(STORAGE_KEY, next);
+        } catch {
+          /* ignore private mode */
+        }
+        flushSync(() => setTheme(next));
+      };
+
+      const doc = document as ViewTransitionDocument;
+      if (prefersReducedMotion() || typeof doc.startViewTransition !== "function") {
+        commit();
+        return;
       }
-      return next;
-    });
-  }, []);
+
+      // The new palette opens from the toggle that was pressed.
+      const root = document.documentElement;
+      if (origin) {
+        root.style.setProperty("--theme-x", `${origin.x}px`);
+        root.style.setProperty("--theme-y", `${origin.y}px`);
+      }
+
+      const transition = doc.startViewTransition(commit);
+      transition.finished
+        .catch(() => undefined)
+        .finally(() => {
+          root.style.removeProperty("--theme-x");
+          root.style.removeProperty("--theme-y");
+        });
+    },
+    [theme],
+  );
 
   return { theme, toggleTheme };
 }

@@ -13,6 +13,7 @@ export function RouteMark({ className }: IconProps) {
     >
       <path
         d="M5.5 6.5v7a4.5 4.5 0 0 0 4.5 4.5h8"
+        pathLength={1}
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"

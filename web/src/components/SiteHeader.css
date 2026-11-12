@@ -33,6 +33,26 @@
   height: 1.375rem;
 }
 
+/* The brand draws its route once, on arrival. */
+.brand__mark path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: stroke-draw 520ms var(--ease-out) 100ms both;
+}
+
+.brand__mark circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.brand__mark circle:first-of-type {
+  animation: node-pop 300ms var(--ease-back) 520ms both;
+}
+
+.brand__mark circle:last-of-type {
+  animation: node-pop 300ms var(--ease-back) 560ms both;
+}
+
 .brand__name {
   line-height: 1;
 }
@@ -160,17 +180,18 @@
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-card);
-  animation: account-panel-in 160ms var(--ease) both;
+  transform-origin: top right;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
-@keyframes account-panel-in {
-  from {
+@starting-style {
+  .account__panel {
     opacity: 0;
     transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

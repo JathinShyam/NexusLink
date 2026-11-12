@@ -56,6 +56,15 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* The newest stop arrives on the line; the rest of the ledger stands still. */
+.recent__item:first-child {
+  animation: fade-in var(--dur-base) var(--ease-out) both;
+}
+
+.recent__item:first-child .recent__node {
+  animation: node-pop 260ms var(--ease-back) 60ms both;
+}
+
 .recent__item[data-expired] .recent__short {
   color: var(--ink-2);
 }

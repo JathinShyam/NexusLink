@@ -60,6 +60,16 @@
   }
 }
 
+/* A path drawn by its own length, used by the route diagram. */
+@keyframes draw-path {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @keyframes draw-y {
   from {
     transform: scaleY(0);
@@ -146,6 +156,12 @@
   .desk__work::after,
   .result::before,
   .result__tear,
+  .route-figure__route,
+  .route-figure__link,
+  .route-figure__node,
+  .route-figure__halo,
+  .route-figure__chip,
+  .route-figure__code,
   .result__copy[data-copied="true"] .icon {
     animation: none !important;
   }

@@ -1,0 +1,63 @@
+.spec-strip {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* A spec band, not a list of chips: equal columns, hairline separated. */
+.spec-strip__list {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  list-style: none;
+}
+
+.spec-strip__item {
+  padding: 0.875rem 1rem;
+  border-left: 1px solid var(--line);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.spec-strip__item:first-child {
+  border-left: 0;
+}
+
+.spec-strip__item:last-child {
+  border-right: 1px solid var(--line);
+}
+
+@media (max-width: 60rem) {
+  .spec-strip__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .spec-strip__item:nth-child(3n) {
+    border-right: 1px solid var(--line);
+  }
+
+  .spec-strip__item:nth-child(3n + 1) {
+    border-left: 0;
+  }
+}
+
+@media (max-width: 36rem) {
+  .spec-strip__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .spec-strip__item:nth-child(3n) {
+    border-right: 0;
+  }
+
+  .spec-strip__item:nth-child(even) {
+    border-right: 1px solid var(--line);
+  }
+
+  .spec-strip__item:nth-child(odd) {
+    border-left: 0;
+  }
+}

@@ -1,0 +1,127 @@
+.api {
+  border-top: 1px solid var(--line);
+}
+
+.api__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+}
+
+.api__endpoints {
+  margin: clamp(1.75rem, 4vh, 2.5rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.api__endpoint {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: pre;
+}
+
+.api__endpoint:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+/* The code sheet is the one dark object on the page. */
+.code {
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--bg);
+  overflow: hidden;
+}
+
+.code__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+  border-bottom: 1px solid rgba(242, 241, 234, 0.12);
+}
+
+.code__bar--second {
+  border-top: 1px solid rgba(242, 241, 234, 0.12);
+}
+
+.code__label {
+  color: rgba(242, 241, 234, 0.6);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.code__status {
+  color: rgba(242, 241, 234, 0.6);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.code__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: rgba(242, 241, 234, 0.72);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.code__copy:hover {
+  background: rgba(242, 241, 234, 0.1);
+  color: #f2f1ea;
+}
+
+.code__copy .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.code__copy[data-copied="true"] .icon {
+  animation: icon-pop var(--dur-base) var(--ease-back) both;
+}
+
+.code__block {
+  margin: 0;
+  padding: 1rem 1.125rem 1.25rem;
+  overflow-x: auto;
+  color: #e7e6dc;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.code__method {
+  color: #a9b4ff;
+}
+
+.code__string {
+  color: #c7c2a8;
+}
+
+.code__key {
+  color: #a9b4ff;
+}
+
+.code__value {
+  color: #c7c2a8;
+}
+
+@media (max-width: 58rem) {
+  .api__inner {
+    grid-template-columns: 1fr;
+  }
+}

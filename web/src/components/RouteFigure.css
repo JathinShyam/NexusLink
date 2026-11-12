@@ -1,0 +1,76 @@
+.route-figure {
+  margin: 0;
+}
+
+/* The figure is a working diagram, not decoration: many routes leave the
+   left edge, merge at one node, and resolve into a single code. */
+.route-figure__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-mono);
+}
+
+.route-figure__url {
+  fill: var(--ink-3);
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+.route-figure__code {
+  fill: var(--accent);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  animation: fade-in var(--dur-base) var(--ease-out) 760ms both;
+}
+
+.route-figure__route {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  animation: draw-path 520ms var(--ease-out) both;
+}
+
+.route-figure__link {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  animation: draw-path 240ms var(--ease-out) 460ms both;
+}
+
+.route-figure__node {
+  fill: var(--accent);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pop 240ms var(--ease-back) 600ms both;
+}
+
+.route-figure__halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  opacity: 0.24;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pop 320ms var(--ease-back) 600ms both;
+}
+
+.route-figure__chip {
+  fill: var(--surface);
+  stroke: var(--line-2);
+  stroke-width: 1.4;
+  animation: fade-in var(--dur-base) var(--ease-out) 700ms both;
+}
+
+.route-figure__caption {
+  margin: 0.75rem 0 0;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}

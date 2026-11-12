@@ -9,11 +9,6 @@
 }
 
 @media (min-width: 58.0625rem) {
-  .app__main {
-    display: flex;
-    align-items: safe center;
-  }
-
   .desk {
     width: 100%;
   }
@@ -87,6 +82,11 @@
   text-wrap: pretty;
 }
 
+.desk__intro .route-figure {
+  max-width: 34rem;
+  margin-top: clamp(2rem, 5vh, 3rem);
+}
+
 .shortcut-hint {
   margin: 2rem 0 0;
   color: var(--ink-3);
@@ -110,6 +110,43 @@
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   animation: fade-in var(--dur-base) var(--ease-out) 180ms both;
+}
+
+/* Shared section chrome: a title column and a lede column, one hairline
+   between sections, nothing else. */
+.section {
+  padding-top: clamp(3rem, 8vh, 5.5rem);
+  padding-bottom: clamp(3rem, 8vh, 5.5rem);
+}
+
+.section__head {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: end;
+}
+
+.section__title {
+  max-width: 14ch;
+  margin: 0;
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.section__lede {
+  max-width: 54ch;
+  margin: 1.25rem 0 0;
+  color: var(--ink-2);
+  font-size: 1rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.section__head .section__lede {
+  margin-top: 0;
 }
 
 .facts__item {
@@ -169,6 +206,18 @@
 
   .shortcut-hint {
     margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .section__head {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .section__lede {
+    margin-top: 0;
   }
 }
 

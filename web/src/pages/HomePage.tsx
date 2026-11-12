@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import type { ShortenRequest } from "../api/client";
 import { useAuth } from "../auth/useAuth";
+import { ApiPanel } from "../components/ApiPanel";
+import { CapabilityGrid } from "../components/CapabilityGrid";
 import { ManageDialog } from "../components/ManageDialog";
 import { RecentLinks } from "../components/RecentLinks";
 import { ResultPanel } from "../components/ResultPanel";
+import { RouteFigure } from "../components/RouteFigure";
+import { RouteSteps } from "../components/RouteSteps";
 import { ShortenForm } from "../components/ShortenForm";
+import { SpecStrip } from "../components/SpecStrip";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useRecentLinks } from "../hooks/useRecentLinks";
 import { useShorten } from "../hooks/useShorten";
@@ -135,6 +140,8 @@ export function HomePage() {
             Paste a URL. Get a short link you can copy, share, and own.
           </p>
 
+          <RouteFigure />
+
           <p className="shortcut-hint">
             Press <kbd className="kbd">/</kbd> to focus the URL field
           </p>
@@ -193,6 +200,11 @@ export function HomePage() {
           )}
         </div>
       </div>
+
+      <SpecStrip />
+      <RouteSteps />
+      <CapabilityGrid />
+      <ApiPanel />
 
       <ManageDialog
         open={manageOpen}

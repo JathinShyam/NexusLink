@@ -1,24 +1,186 @@
 .app {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-height: 100svh;
 }
 
-.workspace {
+.app__main {
   flex: 1;
-  padding: 0 var(--space-5) var(--space-7);
 }
 
-.workspace__inner {
-  width: min(100%, 40rem);
-  margin: 0 auto;
+@media (min-width: 58.0625rem) {
+  .app__main {
+    display: flex;
+    align-items: safe center;
+  }
+
+  .desk {
+    width: 100%;
+  }
+}
+
+/* Two columns: the brief on the left, the work on the right. */
+.desk {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  padding-top: clamp(2rem, 4vh, 3.5rem);
+  padding-bottom: clamp(2.5rem, 5vh, 4rem);
+}
+
+.desk__intro {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  min-width: 0;
+  padding-right: clamp(2rem, 5vw, 5rem);
 }
 
-@media (min-width: 900px) {
-  .workspace__inner {
-    width: min(100%, 44rem);
+.desk__work {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: clamp(2rem, 5vw, 5rem);
+  border-left: 1px solid var(--line);
+}
+
+/* The route line begins with one node at the top of the work column. */
+.desk__work::before {
+  content: "";
+  position: absolute;
+  top: 0.4375rem;
+  left: -3.5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.intro__title {
+  max-width: 9ch;
+  margin: 0;
+  font-size: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+  text-wrap: balance;
+}
+
+.intro__lede {
+  max-width: 30ch;
+  margin: 1.5rem 0 0;
+  color: var(--ink-2);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.shortcut-hint {
+  margin: 2rem 0 0;
+  color: var(--ink-3);
+  font-size: 0.75rem;
+}
+
+.stage {
+  min-width: 0;
+}
+
+/* Facts sit under the work, not under the headline. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: clamp(2rem, 4vh, 2.75rem) 0 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.facts__item {
+  min-width: 0;
+  padding: 0.875rem 1rem 0.9375rem 0;
+}
+
+.facts__item + .facts__item {
+  padding-left: clamp(0.875rem, 2vw, 1.25rem);
+  border-left: 1px solid var(--line);
+}
+
+.facts dt {
+  margin: 0 0 0.1875rem;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 58rem) {
+  .desk {
+    grid-template-columns: 1fr;
+    padding-top: clamp(2.5rem, 7vh, 4rem);
+  }
+
+  .desk__intro {
+    padding-right: 0;
+  }
+
+  .desk__work {
+    margin-top: clamp(2.25rem, 5vh, 3rem);
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .desk__work::before {
+    display: none;
+  }
+
+  .intro__title {
+    max-width: 12ch;
+    font-size: clamp(3rem, 7.6vw, 4.25rem);
+  }
+
+  .intro__lede {
+    max-width: 46ch;
+  }
+
+  .shortcut-hint {
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 36rem) {
+  .facts {
+    grid-template-columns: 1fr;
+  }
+
+  .facts__item + .facts__item {
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 30rem) {
+  .desk {
+    padding-top: 2.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .intro__title {
+    font-size: clamp(2.75rem, 12vw, 3.5rem);
+  }
+
+  .intro__lede {
+    margin-top: 1.25rem;
+    font-size: 1rem;
+  }
+
+  .desk__work {
+    margin-top: 2rem;
   }
 }

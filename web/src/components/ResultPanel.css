@@ -1,58 +1,198 @@
-.result__url {
-  margin-bottom: var(--space-5);
-  font-family: var(--font-display);
-  font-size: clamp(1.15rem, 2.5vw, 1.5rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  word-break: break-all;
+/* The result is a ticket: ink edge, split code, dashed perforation. */
+.result {
+  --pad: clamp(1.25rem, 3.5vw, 2rem);
+
+  position: relative;
+  padding: var(--pad);
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  border-top: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  animation: result-in 240ms var(--ease) both;
 }
 
-.result__url a {
-  color: var(--accent);
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.result__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem var(--space-3);
+  margin-bottom: 1rem;
+}
+
+.result__label {
+  margin: 0;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.result__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  margin: 0;
+  color: var(--success);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.result__state .icon {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
+
+.result__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+}
+
+.result__url {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: 0;
+  font-family: var(--font-mono);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
   text-decoration: none;
 }
 
-.result__url a:hover {
+.result__host {
+  color: var(--ink-3);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.result__code {
+  color: var(--accent);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.result__url:hover .result__code {
+  color: var(--accent-2);
   text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.result__copy {
+  flex: none;
+  min-width: 7rem;
+  margin-left: auto;
+}
+
+.result__copy-error {
+  margin-top: var(--space-3);
+}
+
+/* Dashed tear line with cut-out notches at both edges. */
+.result__perf {
+  position: relative;
+  height: 0;
+  margin: 1.5rem calc(var(--pad) * -1) 0;
+  border-top: 1px dashed var(--line-2);
+}
+
+.result__perf::before,
+.result__perf::after {
+  content: "";
+  position: absolute;
+  top: -0.4375rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.result__perf::before {
+  left: -0.4375rem;
+}
+
+.result__perf::after {
+  right: -0.4375rem;
 }
 
 .result__meta {
   display: grid;
-  gap: var(--space-3);
-  margin: 0 0 var(--space-5);
+  gap: var(--space-4);
+  margin: 1.25rem 0 0;
 }
 
 .result__meta dt {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  margin: 0 0 0.25rem;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
 }
 
 .result__meta dd {
-  margin: var(--space-1) 0 0;
-}
-
-.result__meta code {
-  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
-  font-size: 0.95rem;
-  color: var(--accent);
-}
-
-.result__target {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  line-height: 1.45;
   overflow-wrap: anywhere;
-  color: var(--text-muted);
-  font-size: 0.95rem;
 }
 
 .result__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 1.5rem;
 }
 
-.result__actions .btn--primary {
-  border: none;
+.result__reset {
+  margin-left: -0.625rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.result__open {
+  margin-left: auto;
+}
+
+@media (min-width: 37.5rem) {
+  .result__meta {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 36rem) {
+  .result__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .result__copy {
+    align-self: flex-start;
+    margin-left: 0;
+  }
+
+  .result__open {
+    margin-left: 0;
+  }
 }

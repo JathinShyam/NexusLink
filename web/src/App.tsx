@@ -1,34 +1,58 @@
-import { Hero } from "./components/Hero";
-import { ManagePanel } from "./components/ManagePanel";
-import { ResultPanel } from "./components/ResultPanel";
-import { ShortenForm } from "./components/ShortenForm";
+import { useEffect, useRef } from "react";
 import { SiteFooter } from "./components/SiteFooter";
-import { useAuthToken } from "./hooks/useAuthToken";
-import { useShorten } from "./hooks/useShorten";
+import { SiteHeader } from "./components/SiteHeader";
+import { useApiStatus } from "./hooks/useApiStatus";
+import { useTheme } from "./hooks/useTheme";
+import { useLocation } from "./lib/navigation";
+import { AuthPage } from "./pages/AuthPage";
+import { HomePage } from "./pages/HomePage";
+import { SignOutPage } from "./pages/SignOutPage";
 import "./App.css";
 
 export default function App() {
-  const { token, setToken, clearToken, hasToken } = useAuthToken();
-  const { result, error, create, isLoading } = useShorten(token);
+  const { theme, toggleTheme } = useTheme();
+  const apiStatus = useApiStatus();
+  const { pathname } = useLocation();
+  const previousPath = useRef(pathname);
+
+  useEffect(() => {
+    if (previousPath.current === pathname) {
+      return;
+    }
+    previousPath.current = pathname;
+
+    if (pathname === "/signin" || pathname === "/register") {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("main")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
+
+  let page;
+  if (pathname === "/signin") {
+    page = <AuthPage key="signin" mode="signin" />;
+  } else if (pathname === "/register") {
+    page = <AuthPage key="register" mode="register" />;
+  } else if (pathname === "/signout") {
+    page = <SignOutPage />;
+  } else {
+    page = <HomePage />;
+  }
 
   return (
     <div className="app">
-      <Hero />
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
 
-      <main className="workspace">
-        <div className="workspace__inner">
-          <ShortenForm
-            isLoading={isLoading}
-            error={error}
-            hasToken={hasToken}
-            onSubmit={create}
-          />
-          {result ? <ResultPanel result={result} /> : null}
-          <ManagePanel token={token} onTokenChange={setToken} onClearToken={clearToken} />
-        </div>
-      </main>
+      <SiteHeader theme={theme} onToggleTheme={toggleTheme} />
 
-      <SiteFooter />
+      {page}
+
+      <SiteFooter status={apiStatus} />
     </div>
   );
 }

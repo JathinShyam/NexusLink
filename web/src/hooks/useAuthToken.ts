@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "nexuslink.jwt";
 
@@ -43,6 +43,17 @@ function subscribe(listener: () => void) {
 
 export function useAuthToken() {
   const token = useSyncExternalStore(subscribe, readToken, () => "");
+
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key === STORAGE_KEY || event.key === null) {
+        emit();
+      }
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const setToken = useCallback((value: string) => {
     writeToken(value.trim());

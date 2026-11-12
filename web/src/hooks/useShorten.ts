@@ -13,11 +13,13 @@ export function useShorten(token: string) {
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<ShortenResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
   const create = useCallback(
     async (input: ShortenRequest) => {
       setStatus("loading");
       setError(null);
+      setErrorCode(null);
       try {
         const payload: ShortenRequest = {
           long_url: input.long_url.trim(),
@@ -37,6 +39,7 @@ export function useShorten(token: string) {
       } catch (err) {
         setResult(null);
         setError(friendlyError(err));
+        setErrorCode(err instanceof ApiError ? err.code : null);
         setStatus("error");
         if (!(err instanceof ApiError) && !(err instanceof Error)) {
           console.error(err);
@@ -51,7 +54,23 @@ export function useShorten(token: string) {
     setStatus("idle");
     setResult(null);
     setError(null);
+    setErrorCode(null);
   }, []);
 
-  return { status, result, error, create, reset, isLoading: status === "loading" };
+  const dismissError = useCallback(() => {
+    setError(null);
+    setErrorCode(null);
+    setStatus((current) => (current === "error" ? "idle" : current));
+  }, []);
+
+  return {
+    status,
+    result,
+    error,
+    errorCode,
+    create,
+    reset,
+    dismissError,
+    isLoading: status === "loading",
+  };
 }

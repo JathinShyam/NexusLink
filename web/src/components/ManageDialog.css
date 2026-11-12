@@ -1,0 +1,243 @@
+.manage-dialog {
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: min(46rem, calc(100dvh - 2rem));
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-top: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.manage-dialog[open] {
+  animation: dialog-in 220ms var(--ease) both;
+}
+
+.manage-dialog::backdrop {
+  background: rgba(8, 9, 11, 0.45);
+  backdrop-filter: blur(4px);
+  animation: backdrop-in 220ms ease both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.manage-dialog__inner {
+  padding: clamp(1.25rem, 4vw, 1.75rem);
+}
+
+.manage-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.manage-dialog__title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.manage-dialog__lede {
+  max-width: 38ch;
+  margin: 0.375rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.manage-dialog__close {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  transition:
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease),
+    color 160ms var(--ease);
+}
+
+.manage-dialog__close:hover {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* Account block */
+.manage-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.manage-account__person {
+  flex: 1 1 14rem;
+}
+
+.manage-account__person .person__avatar.is-muted {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+.manage-account__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-left: auto;
+  color: var(--success);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.manage-account__dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+.manage-account__signout,
+.manage-account__signin {
+  flex: none;
+}
+
+.manage-account__signout {
+  min-height: 2.5rem;
+  padding-inline: 0.625rem;
+  font-size: 0.8125rem;
+}
+
+.manage-account__signout .icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--ink-3);
+}
+
+.manage-account__signin {
+  min-height: 2.5rem;
+  font-size: 0.875rem;
+}
+
+.manage-dialog__section {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+.manage-dialog__section:last-child {
+  padding-bottom: 0.25rem;
+}
+
+.manage-dialog__section-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.manage-dialog__section-copy {
+  margin: 0.25rem 0 1rem;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.manage-delete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.manage-delete__input {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.manage-delete__submit {
+  align-self: flex-start;
+}
+
+.manage-confirm {
+  padding: var(--space-4);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+}
+
+.manage-confirm p {
+  margin: 0 0 var(--space-3);
+  color: var(--ink);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.manage-confirm code {
+  padding: 0.0625rem 0.25rem;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 0.875em;
+}
+
+.manage-confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (max-width: 30rem) {
+  .manage-dialog {
+    width: calc(100vw - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
+  }
+
+  .manage-delete__input {
+    font-size: 1rem;
+  }
+
+  .manage-account__person {
+    flex-basis: 100%;
+  }
+
+  .manage-account__status {
+    margin-left: 0;
+  }
+}

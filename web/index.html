@@ -6,18 +6,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="NexusLink — production-minded URL shortener. Shorten links, own them, redirect fast."
+      content="NexusLink is a quiet, fast URL shortener. Paste a link and get a short one you can copy, share, and own."
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f2f2ed" />
+    <meta property="og:title" content="NexusLink — Long links, cut to size." />
+    <meta
+      property="og:description"
+      content="Paste a URL. Get a short link you can copy, share, and own."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NexusLink" />
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="NexusLink: long links, cut to size. A short link card reads nexuslink.to/x7Kp2."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NexusLink — Long links, cut to size." />
+    <meta
+      name="twitter:description"
+      content="Paste a URL. Get a short link you can copy, share, and own."
+    />
+    <meta name="twitter:image" content="/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="NexusLink: long links, cut to size. A short link card reads nexuslink.to/x7Kp2."
+    />
+    <script src="/theme-init.js"></script>
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@600;700;800&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/instrument-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
-    <title>NexusLink</title>
+    <title>NexusLink — Long links, cut to size.</title>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div
+        style="
+          max-width: 32rem;
+          margin: 12vh auto;
+          padding: 0 1.5rem;
+          color: #121310;
+          font-family: system-ui, sans-serif;
+          line-height: 1.5;
+        "
+      >
+        <strong>NexusLink needs JavaScript.</strong>
+        <p>Enable JavaScript in your browser to shorten and manage links.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

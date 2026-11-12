@@ -1,16 +1,25 @@
+import type { ApiStatus } from "../hooks/useApiStatus";
 import "./SiteFooter.css";
 
-export function SiteFooter() {
+type Props = {
+  status: ApiStatus;
+};
+
+const STATUS_LABEL: Record<ApiStatus, string> = {
+  checking: "Checking API…",
+  ready: "API ready",
+  unavailable: "API unavailable",
+};
+
+export function SiteFooter({ status }: Props) {
   return (
-    <footer className="footer">
-      <div className="footer__inner">
-        <p className="footer__brand">NexusLink</p>
-        <p className="footer__note">
-          Local demo UI for the Go API — Redis cache, rate limits, JWT delete, Prometheus metrics.
+    <footer className="site-footer">
+      <div className="site-footer__inner shell">
+        <p className={`site-footer__status is-${status}`} role="status" aria-live="polite">
+          <span className="site-footer__dot" aria-hidden="true" />
+          {STATUS_LABEL[status]}
         </p>
-        <p className="footer__meta">
-          API <code>localhost:8080</code> · UI <code>localhost:5173</code>
-        </p>
+        <p className="site-footer__note">Your session stays in this browser.</p>
       </div>
     </footer>
   );

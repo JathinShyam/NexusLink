@@ -1,102 +1,349 @@
-import { useState, type FormEvent } from "react";
-import type { ShortenResponse } from "../api/client";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import type { ShortenRequest, ShortenResponse } from "../api/client";
+import { prepareUrl } from "../lib/url";
+import { AlertIcon, LinkIcon, PlusIcon } from "./Icons";
 import "./ShortenForm.css";
 
 type Props = {
   isLoading: boolean;
   error: string | null;
-  hasToken: boolean;
-  onSubmit: (values: {
-    long_url: string;
-    custom_alias?: string;
-    expires_in_seconds?: number;
-  }) => Promise<ShortenResponse | null>;
+  errorCode: string | null;
+  isAuthenticated: boolean;
+  focusSignal: number;
+  onSubmit: (values: ShortenRequest) => Promise<ShortenResponse | null>;
+  onDismissError: () => void;
+  onManage: () => void;
 };
 
-export function ShortenForm({ isLoading, error, hasToken, onSubmit }: Props) {
+const EXPIRY_OPTIONS = [
+  { value: "0", label: "Never" },
+  { value: "1", label: "1 hour" },
+  { value: "24", label: "24 hours" },
+  { value: "168", label: "7 days" },
+  { value: "720", label: "30 days" },
+  { value: "custom", label: "Custom…" },
+];
+
+const ALIAS_PATTERN = /^[A-Za-z0-9_-]{3,16}$/;
+const CUSTOM_HOURS_MAX = 8_760;
+
+export function ShortenForm({
+  isLoading,
+  error,
+  errorCode,
+  isAuthenticated,
+  focusSignal,
+  onSubmit,
+  onDismissError,
+  onManage,
+}: Props) {
   const [longUrl, setLongUrl] = useState("");
   const [alias, setAlias] = useState("");
-  const [expiryHours, setExpiryHours] = useState("");
+  const [expiryHours, setExpiryHours] = useState("0");
+  const [customHours, setCustomHours] = useState("");
+  const [showOptions, setShowOptions] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
+  const [aliasTouched, setAliasTouched] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const hours = Number(expiryHours);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const aliasRef = useRef<HTMLInputElement>(null);
+  const customExpiryRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (focusSignal > 0) {
+      inputRef.current?.focus();
+    }
+  }, [focusSignal]);
+
+  useEffect(() => {
+    if (expiryHours === "custom") {
+      customExpiryRef.current?.focus();
+    }
+  }, [expiryHours]);
+
+  useEffect(() => {
+    if (errorCode === "INVALID_URL") {
+      inputRef.current?.focus();
+    }
+  }, [errorCode]);
+
+  useEffect(() => {
+    if (errorCode === "INVALID_ALIAS" || errorCode === "ALIAS_TAKEN") {
+      setShowOptions(true);
+    }
+  }, [errorCode]);
+
+  useEffect(() => {
+    if (
+      showOptions &&
+      (errorCode === "INVALID_ALIAS" || errorCode === "ALIAS_TAKEN")
+    ) {
+      aliasRef.current?.focus();
+    }
+  }, [errorCode, showOptions]);
+
+  const trimmedAlias = alias.trim();
+  const aliasInvalid = trimmedAlias.length > 0 && !ALIAS_PATTERN.test(trimmedAlias);
+  const aliasApiError = errorCode === "INVALID_ALIAS" || errorCode === "ALIAS_TAKEN";
+  const showAliasError = (aliasInvalid && aliasTouched) || aliasApiError;
+  const urlFieldInvalid = Boolean(urlError) || errorCode === "INVALID_URL";
+  const hasOptionValues = trimmedAlias.length > 0 || expiryHours !== "0";
+  const visibleError = urlError ?? error;
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+
+    setUrlError(null);
+    setCustomError(null);
+    setAliasTouched(true);
+
+    const prepared = prepareUrl(longUrl);
+    if (!prepared.ok) {
+      setUrlError(prepared.error);
+      inputRef.current?.focus();
+      return;
+    }
+
+    if (aliasInvalid) {
+      if (showOptions) {
+        aliasRef.current?.focus();
+      } else {
+        setShowOptions(true);
+        window.requestAnimationFrame(() => aliasRef.current?.focus());
+      }
+      return;
+    }
+
+    let hours = Number(expiryHours);
+    if (expiryHours === "custom") {
+      const parsed = Number(customHours);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > CUSTOM_HOURS_MAX) {
+        setCustomError("Enter a whole number from 1 to 8,760 hours.");
+        if (showOptions) {
+          customExpiryRef.current?.focus();
+        } else {
+          setShowOptions(true);
+          window.requestAnimationFrame(() => customExpiryRef.current?.focus());
+        }
+        return;
+      }
+      hours = parsed;
+    }
+
+    setLongUrl(prepared.value);
     await onSubmit({
-      long_url: longUrl,
-      custom_alias: alias || undefined,
+      long_url: prepared.value,
+      custom_alias: trimmedAlias || undefined,
       expires_in_seconds: hours > 0 ? Math.round(hours * 3600) : undefined,
     });
   }
 
-  return (
-    <section id="shorten" className="panel shorten" aria-labelledby="shorten-title">
-      <div className="panel__head">
-        <h2 id="shorten-title" className="panel__title">
-          Create short link
-        </h2>
-        <p className="panel__lede">
-          {hasToken
-            ? "JWT attached — new links are owned and can be deleted later."
-            : "Anonymous by default. Add a JWT below to own what you create."}
-        </p>
-      </div>
+  function dismissApiError() {
+    if (errorCode) {
+      onDismissError();
+    }
+  }
 
-      <form className="shorten__form" onSubmit={handleSubmit}>
-        <label className="field">
-          <span className="field__label">Long URL</span>
+  function handleUrlChange(value: string) {
+    setLongUrl(value);
+    if (urlError) {
+      setUrlError(null);
+    }
+    dismissApiError();
+  }
+
+  function handleAliasChange(value: string) {
+    setAlias(value);
+    dismissApiError();
+  }
+
+  function handleExpiryChange(value: string) {
+    setExpiryHours(value);
+    dismissApiError();
+  }
+
+  function handleCustomHoursChange(value: string) {
+    setCustomHours(value);
+    if (customError) {
+      setCustomError(null);
+    }
+    dismissApiError();
+  }
+
+  return (
+    <form className="composer" onSubmit={handleSubmit} noValidate aria-busy={isLoading}>
+      <div className="composer__surface">
+        <div className="composer__bar">
+          <LinkIcon className="composer__leading-icon" />
+          <label className="sr-only" htmlFor="long-url">
+            Long URL
+          </label>
           <input
-            className="field__input"
-            type="url"
+            ref={inputRef}
+            id="long-url"
+            className="composer__input"
+            type="text"
             name="long_url"
             required
-            placeholder="https://example.com/docs/path"
+            placeholder="https://example.com/your-link…"
             value={longUrl}
-            onChange={(e) => setLongUrl(e.target.value)}
+            onChange={(event) => handleUrlChange(event.target.value)}
             autoComplete="url"
+            inputMode="url"
+            autoCapitalize="none"
+            spellCheck={false}
+            enterKeyHint="go"
+            aria-invalid={urlFieldInvalid}
+            aria-describedby={urlFieldInvalid ? "url-error" : undefined}
           />
-        </label>
-
-        <div className="shorten__row">
-          <label className="field">
-            <span className="field__label">Custom alias</span>
-            <input
-              className="field__input"
-              type="text"
-              name="custom_alias"
-              placeholder="my-link"
-              maxLength={16}
-              pattern="[A-Za-z0-9_-]{3,16}"
-              title="3–16 alphanumeric characters, hyphens, or underscores"
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
-            />
-          </label>
-
-          <label className="field">
-            <span className="field__label">Expires in (hours)</span>
-            <input
-              className="field__input"
-              type="number"
-              name="expires_hours"
-              min={1}
-              step={1}
-              placeholder="optional"
-              value={expiryHours}
-              onChange={(e) => setExpiryHours(e.target.value)}
-            />
-          </label>
+          <button
+            className="btn btn--primary composer__submit"
+            type="submit"
+            disabled={isLoading}
+            aria-busy={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className="spinner" aria-hidden="true" />
+                Shortening…
+              </>
+            ) : (
+              "Shorten"
+            )}
+          </button>
         </div>
 
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
+        <div className="composer__foot">
+          <button
+            className="composer__options-toggle"
+            type="button"
+            aria-expanded={showOptions}
+            aria-controls="composer-options"
+            onClick={() => setShowOptions((open) => !open)}
+          >
+            <PlusIcon className={showOptions ? "icon is-open" : "icon"} />
+            <span>Alias and expiry</span>
+            {hasOptionValues ? (
+              <span className="composer__options-dot" aria-hidden="true" />
+            ) : null}
+            <span className="sr-only">
+              {hasOptionValues ? ", options set" : ""}
+            </span>
+          </button>
 
-        <button className="btn btn--primary shorten__submit" type="submit" disabled={isLoading}>
-          {isLoading ? "Creating…" : "Shorten"}
-        </button>
-      </form>
-    </section>
+          <p className="composer__status">
+            <span
+              className={
+                isAuthenticated
+                  ? "composer__status-dot is-active"
+                  : "composer__status-dot"
+              }
+              aria-hidden="true"
+            />
+            <span>{isAuthenticated ? "Signed in" : "Anonymous link"}</span>
+            <button className="composer__status-action" type="button" onClick={onManage}>
+              {isAuthenticated ? "Manage links" : "Sign in"}
+            </button>
+          </p>
+        </div>
+
+        <div
+          id="composer-options"
+          className="composer__options"
+          data-open={showOptions}
+          inert={!showOptions}
+          aria-hidden={!showOptions}
+        >
+          <div className="composer__options-inner">
+            <div className="composer__options-grid">
+              <label className="field">
+                <span className="field__label">Custom alias</span>
+                <input
+                  ref={aliasRef}
+                  className="field__control"
+                  type="text"
+                  name="custom_alias"
+                  placeholder="my-link"
+                  maxLength={16}
+                  value={alias}
+                  onChange={(event) => handleAliasChange(event.target.value)}
+                  onBlur={() => setAliasTouched(true)}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  aria-invalid={showAliasError}
+                  aria-describedby="alias-hint"
+                />
+                <span
+                  id="alias-hint"
+                  className="field__hint"
+                  data-tone={showAliasError ? "danger" : undefined}
+                  role={aliasApiError ? "alert" : undefined}
+                >
+                  {aliasApiError
+                    ? (error ?? "That custom alias is not available.")
+                    : showAliasError
+                      ? "3–16 characters: letters, numbers, hyphens, or underscores."
+                      : "3–16 letters, numbers, hyphens, or underscores."}
+                </span>
+              </label>
+
+              <label className="field">
+                <span className="field__label">Expires</span>
+                <select
+                  className="field__control"
+                  name="expires_hours"
+                  value={expiryHours}
+                  onChange={(event) => handleExpiryChange(event.target.value)}
+                >
+                  {EXPIRY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {expiryHours === "custom" ? (
+                <label className="field composer__custom">
+                  <span className="field__label">Hours until expiry</span>
+                  <input
+                    ref={customExpiryRef}
+                    className="field__control"
+                    type="number"
+                    name="custom_expiry_hours"
+                    min={1}
+                    max={CUSTOM_HOURS_MAX}
+                    step={1}
+                    inputMode="numeric"
+                    placeholder="24"
+                    value={customHours}
+                    onChange={(event) => handleCustomHoursChange(event.target.value)}
+                    required
+                    aria-invalid={Boolean(customError)}
+                    aria-describedby="custom-expiry-hint"
+                  />
+                  <span
+                    id="custom-expiry-hint"
+                    className="field__hint"
+                    data-tone={customError ? "danger" : undefined}
+                  >
+                    {customError ?? "Up to 8,760 hours (one year)."}
+                  </span>
+                </label>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {visibleError && !aliasApiError ? (
+        <p className="form-error composer__error" id="url-error" role="alert">
+          <AlertIcon className="icon" />
+          <span>{visibleError}</span>
+        </p>
+      ) : null}
+    </form>
   );
 }

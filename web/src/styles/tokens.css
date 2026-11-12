@@ -1,35 +1,93 @@
 :root {
-  /* Signal board palette */
-  --bg-deep: #0b1220;
-  --bg-mid: #142033;
-  --bg-elevated: #1a2740;
-  --bg-panel: rgba(26, 39, 64, 0.72);
-  --text: #e8eef7;
-  --text-muted: #9aabc4;
-  --accent: #2dd4bf;
-  --accent-dim: #1a9e8f;
-  --accent-soft: rgba(45, 212, 191, 0.14);
-  --error: #f07178;
-  --error-soft: rgba(240, 113, 120, 0.12);
-  --success: #7ee787;
-  --border: rgba(232, 238, 247, 0.1);
-  --border-strong: rgba(45, 212, 191, 0.35);
+  color-scheme: light;
 
-  --font-display: "Syne", sans-serif;
-  --font-body: "DM Sans", sans-serif;
+  /* Paper and ink — one neutral ramp, tinted very slightly warm */
+  --bg: #f2f2ed;
+  --surface: #fbfbf8;
+  --surface-2: #eaeae4;
+  --surface-3: #e1e1da;
+  --ink: #171812;
+  --ink-2: #55564e;
+  --ink-3: #6d6e65;
+  --line: #e1e1d9;
+  --line-2: #c9c9bf;
+
+  /* One signal color, used for links, codes and the route line */
+  --accent: #2438e8;
+  --accent-2: #192bb8;
+  --accent-soft: rgba(36, 56, 232, 0.1);
+  --accent-wash: rgba(36, 56, 232, 0.045);
+  --on-accent: #ffffff;
+
+  --danger: #b3261e;
+  --danger-line: rgba(179, 38, 30, 0.3);
+  --danger-soft: rgba(179, 38, 30, 0.07);
+  --danger-on: #ffffff;
+  --success: #146c43;
+  --success-line: rgba(20, 108, 67, 0.26);
+  --success-soft: rgba(20, 108, 67, 0.09);
+
+  --shadow-sm: 0 1px 2px rgba(17, 18, 15, 0.04);
+  --shadow-card:
+    0 1px 2px rgba(17, 18, 15, 0.03), 0 12px 32px rgba(17, 18, 15, 0.04);
+  --shadow-lg: 0 32px 90px rgba(17, 18, 15, 0.24);
+
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, monospace;
+
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius: 11px;
+  --radius-lg: 15px;
+  --radius-xl: 22px;
+
+  --shell: 72rem;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+
+  --display: clamp(3.25rem, 6.6vw, 5.5rem);
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
-  --space-8: 4.5rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 2.5rem;
 
-  --radius: 6px;
-  --max-width: 68rem;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --duration: 200ms;
+}
 
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration: 420ms;
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b0c0e;
+  --surface: #121316;
+  --surface-2: #18191d;
+  --surface-3: #1f2025;
+  --ink: #f2f1ea;
+  --ink-2: #a9a9a0;
+  --ink-3: #86867d;
+  --line: #232429;
+  --line-2: #3a3b42;
+
+  --accent: #a9b4ff;
+  --accent-2: #c6ceff;
+  --accent-soft: rgba(169, 180, 255, 0.14);
+  --accent-wash: rgba(169, 180, 255, 0.05);
+  --on-accent: #0b0c0e;
+
+  --danger: #ff9b91;
+  --danger-line: rgba(255, 155, 145, 0.3);
+  --danger-soft: rgba(255, 155, 145, 0.08);
+  --danger-on: #1a0a08;
+  --success: #7ddbaa;
+  --success-line: rgba(125, 219, 170, 0.28);
+  --success-soft: rgba(125, 219, 170, 0.09);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 46px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 32px 90px rgba(0, 0, 0, 0.65);
 }

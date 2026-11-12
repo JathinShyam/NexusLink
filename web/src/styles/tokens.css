@@ -120,3 +120,14 @@
     --motion-press: 1;
   }
 }
+
+/* The code sheet is one dark object in both themes, so it carries its own
+   palette instead of borrowing ink and background (which invert in dark). */
+:root {
+  --code-bg: #16171b;
+  --code-ink: #e8e7de;
+  --code-muted: rgba(232, 231, 222, 0.62);
+  --code-line: rgba(232, 231, 222, 0.14);
+  --code-accent: #a9b4ff;
+  --code-string: #c9c3a6;
+}

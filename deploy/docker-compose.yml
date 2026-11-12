@@ -189,6 +189,9 @@ services:
       REDIS_URL: redis://redis:6379
       BASE_URL: http://localhost:8080
       JWT_SECRET: dev-secret-change-me
+      JWT_TTL_HOURS: ${JWT_TTL_HOURS:-24}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-10}
+      AUTH_RATE_LIMIT_WINDOW_SEC: ${AUTH_RATE_LIMIT_WINDOW_SEC:-60}
       SNOWFLAKE_MACHINE_ID: 1
       CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000
       # Analytics is off by default; enable with the "analytics" profile plus:

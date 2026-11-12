@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/JathinShyam/NexusLink/internal/accounts"
 	"github.com/JathinShyam/NexusLink/internal/analytics"
 	"github.com/JathinShyam/NexusLink/internal/auth"
 	"github.com/JathinShyam/NexusLink/internal/cache"
@@ -90,6 +91,8 @@ func main() {
 	shortenService := shorten.NewService(repo, generator, cfg.BaseURL, urlCache)
 	linksService := links.NewService(repo, urlCache)
 	jwtService := auth.NewJWT(cfg.JWTSecret, cfg.JWTTTL)
+	accountService := accounts.NewService(repo, jwtService)
+	accountHandler := accounts.NewHandler(accountService)
 
 	runCtx, stopRun := context.WithCancel(context.Background())
 
@@ -107,24 +110,44 @@ func main() {
 	)
 
 	shortenHandler := ratelimit.Middleware(shortenLimiter, "shorten", m)(
-		auth.OptionalMiddleware(jwtService)(
+		auth.OptionalMiddleware(jwtService, accountService)(
 			http.HandlerFunc(shorten.NewHandler(shortenService).Create),
 		),
 	)
 	redirectHandler := ratelimit.Middleware(redirectLimiter, "redirect", m)(
 		http.HandlerFunc(redirect.NewHandler(resolver, publisher).Serve),
 	)
-	deleteHandler := auth.Middleware(jwtService)(
+	deleteHandler := auth.Middleware(jwtService, accountService)(
 		http.HandlerFunc(links.NewHandler(linksService).Delete),
 	)
 
+	authLimiter := ratelimit.NewFixedWindowLimiter(
+		redisClient, "rl:auth", cfg.AuthRateLimit, cfg.AuthRateWindow,
+	)
+	registerHandler := ratelimit.Middleware(authLimiter, "auth", m)(
+		http.HandlerFunc(accountHandler.Register),
+	)
+	loginHandler := ratelimit.Middleware(authLimiter, "auth", m)(
+		http.HandlerFunc(accountHandler.Login),
+	)
+	logoutHandler := auth.Middleware(jwtService, accountService)(
+		http.HandlerFunc(accountHandler.Logout),
+	)
+	meHandler := auth.Middleware(jwtService, accountService)(
+		http.HandlerFunc(accountHandler.Me),
+	)
+
 	srv := server.New(log, cfg.Addr(), server.Options{
-		Shorten:     shortenHandler,
-		Redirect:    redirectHandler,
-		Delete:      deleteHandler,
-		Metrics:     m,
-		Ready:       readyCheck(pool, redisClient),
-		CORSOrigins: cfg.CORSOrigins,
+		Shorten:      shortenHandler,
+		Redirect:     redirectHandler,
+		Delete:       deleteHandler,
+		AuthRegister: registerHandler,
+		AuthLogin:    loginHandler,
+		AuthLogout:   logoutHandler,
+		AuthMe:       meHandler,
+		Metrics:      m,
+		Ready:        readyCheck(pool, redisClient),
+		CORSOrigins:  cfg.CORSOrigins,
 	})
 
 	go func() {

@@ -21,6 +21,8 @@ type Config struct {
 	BaseURL                string
 	JWTSecret              string
 	JWTTTL                 time.Duration
+	AuthRateLimit          int64
+	AuthRateWindow         time.Duration
 	MachineID              int64
 	ShortenRateLimit       int64
 	ShortenRateWindow      time.Duration
@@ -72,6 +74,16 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid JWT_TTL_HOURS: %w", err)
 	}
 
+	authRateLimit, err := strconv.ParseInt(getEnv("AUTH_RATE_LIMIT", "10"), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid AUTH_RATE_LIMIT: %w", err)
+	}
+
+	authRateWindowSec, err := strconv.Atoi(getEnv("AUTH_RATE_LIMIT_WINDOW_SEC", "60"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid AUTH_RATE_LIMIT_WINDOW_SEC: %w", err)
+	}
+
 	analyticsEnabled, err := strconv.ParseBool(getEnv("ANALYTICS_ENABLED", "false"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid ANALYTICS_ENABLED: %w", err)
@@ -105,6 +117,8 @@ func Load() (*Config, error) {
 		BaseURL:                getEnv("BASE_URL", "http://localhost:8080"),
 		JWTSecret:              getEnv("JWT_SECRET", "dev-secret-change-me"),
 		JWTTTL:                 time.Duration(jwtTTLHours) * time.Hour,
+		AuthRateLimit:          authRateLimit,
+		AuthRateWindow:         time.Duration(authRateWindowSec) * time.Second,
 		MachineID:              machineID,
 		ShortenRateLimit:       shortenLimit,
 		ShortenRateWindow:      time.Duration(shortenWindowSec) * time.Second,

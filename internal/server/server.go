@@ -15,12 +15,16 @@ import (
 type ReadyChecker func(ctx context.Context) error
 
 type Options struct {
-	Shorten     http.Handler
-	Redirect    http.Handler
-	Delete      http.Handler
-	Metrics     *metrics.Metrics
-	Ready       ReadyChecker
-	CORSOrigins []string
+	Shorten      http.Handler
+	Redirect     http.Handler
+	Delete       http.Handler
+	AuthRegister http.Handler
+	AuthLogin    http.Handler
+	AuthLogout   http.Handler
+	AuthMe       http.Handler
+	Metrics      *metrics.Metrics
+	Ready        ReadyChecker
+	CORSOrigins  []string
 }
 
 type Server struct {
@@ -53,6 +57,18 @@ func New(log *slog.Logger, addr string, opts Options) *Server {
 	}
 	if opts.Delete != nil {
 		mux.Handle("DELETE /api/v1/links/{short_code}", opts.Delete)
+	}
+	if opts.AuthRegister != nil {
+		mux.Handle("POST /api/v1/auth/register", opts.AuthRegister)
+	}
+	if opts.AuthLogin != nil {
+		mux.Handle("POST /api/v1/auth/login", opts.AuthLogin)
+	}
+	if opts.AuthLogout != nil {
+		mux.Handle("POST /api/v1/auth/logout", opts.AuthLogout)
+	}
+	if opts.AuthMe != nil {
+		mux.Handle("GET /api/v1/auth/me", opts.AuthMe)
 	}
 	if opts.Redirect != nil {
 		mux.Handle("GET /{short_code}", opts.Redirect)
